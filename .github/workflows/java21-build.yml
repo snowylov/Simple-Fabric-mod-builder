@@ -1,0 +1,64 @@
+name: Build Noobvill Moderna Dynamica
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Check out build bundle
+        uses: actions/checkout@v4
+
+      - name: Reconstruct validated source
+        run: |
+          cat source-parts/source.part-* > source.zip
+          echo "8c654de9ac8d72916bcc19e4ea77a5ced8af40a32618c6ec10f33beb316c0fd2  source.zip" | sha256sum --check
+          mkdir workspace
+          unzip -q source.zip -d workspace
+
+      - name: Install Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Reuse Gradle caches
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate content contracts
+        working-directory: workspace
+        run: |
+          python3 -m pip install --disable-pip-version-check pillow
+          python3 tools/verify_futureworks.py
+          python3 tools/verify_dreadwild.py
+
+      - name: Compile and package distinct artifacts
+        working-directory: workspace
+        run: |
+          chmod +x gradlew
+          ./gradlew releaseJars --stacktrace
+
+      - name: Collect requested deliverables
+        run: |
+          mkdir release
+          cp workspace/build/libs/noobvill-moderna-dynamica-3.4.0.jar release/noobvill-moderna-dynamica-3.4.0.jar
+          cp workspace/build/libs/noobvill-moderna-dynamica-3.4.0-api.jar release/noobvill-moderna-dynamica-3.4.0-api.jar
+          cp workspace/build/libs/noobvill-moderna-dynamica-3.4.0-deobf.jar release/noobvill-moderna-dynamica-3.4.0-deobf.jar
+          cp workspace/build/distributions/noobvill-moderna-dynamica-3.4.0-source.zip release/noobvill-moderna-dynamica-3.4.0-source.zip
+          sha256sum release/* > release/SHA256SUMS.txt
+
+      - name: Upload requested deliverables
+        uses: actions/upload-artifact@v4
+        with:
+          name: noobvill-moderna-dynamica-3.4.0
+          path: release/
+          if-no-files-found: error
+          retention-days: 30

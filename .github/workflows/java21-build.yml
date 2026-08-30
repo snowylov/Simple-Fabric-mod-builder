@@ -20,7 +20,7 @@ jobs:
       - name: Reconstruct validated source
         run: |
           cat source-parts/source.part-* > source.zip
-          echo "8c654de9ac8d72916bcc19e4ea77a5ced8af40a32618c6ec10f33beb316c0fd2  source.zip" | sha256sum --check
+          echo "692add7e422c65a57ae35c3bdb35567865d555c280525212a65d39b2bab3e43e  source.zip" | sha256sum --check
           mkdir workspace
           unzip -q source.zip -d workspace
 

@@ -70,7 +70,7 @@ jobs:
       - name: Publish verified artifacts branch
         run: |
           mkdir /tmp/noobvill-release
-          for artifact in release/*; do\n            base64 -w0 "$artifact" > "/tmp/noobvill-release/$(basename "$artifact").b64"\n          done
+          for artifact in release/*; do base64 -w0 "$artifact" > "/tmp/noobvill-release/$(basename "$artifact").b64"; done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout --orphan build-artifacts-stage

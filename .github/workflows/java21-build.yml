@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -66,3 +66,17 @@ jobs:
           path: release/
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish verified artifacts branch
+        run: |
+          mkdir /tmp/noobvill-release
+          cp release/* /tmp/noobvill-release/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan build-artifacts-stage
+          git rm -rf .
+          git clean -fdx
+          cp /tmp/noobvill-release/* .
+          git add .
+          git commit -m "Verified Noobvill Power and Forcefields 1.3.0 artifacts"
+          git push --force origin HEAD:build-artifacts

@@ -4,6 +4,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths:
+      - 'source-1.4.0.zip.b64'
+      - '.github/workflows/java21-build.yml'
 
 permissions:
   contents: write
@@ -19,8 +22,8 @@ jobs:
 
       - name: Reconstruct validated source
         run: |
-          cat source-parts/source.part-* > source.zip
-          echo "40bdd9ed605707b003cea51d563250ebe432e7007600c9da1e854e00bb925cd4  source.zip" | sha256sum --check
+          base64 -d source-1.4.0.zip.b64 > source.zip
+          echo "63d92114e5481cb1f4e28701232f2ec210e543fdabac2d354cad1c2f48f1f9ff  source.zip" | sha256sum --check
           mkdir workspace
           unzip -q source.zip -d workspace
 
@@ -41,28 +44,31 @@ jobs:
 
       - name: Verify requested deliverables
         run: |
-          test -f workspace/build/libs/noobvill-power-forcefields-1.3.0.jar
-          test -f workspace/build/libs/noobvill-power-forcefields-1.3.0-deobf.jar
-          test -f workspace/build/distributions/noobvill-power-forcefields-1.3.0-api.zip
-          unzip -p workspace/build/libs/noobvill-power-forcefields-1.3.0.jar fabric.mod.json | grep -q '"id": "noobvill_power"'
-          unzip -l workspace/build/libs/noobvill-power-forcefields-1.3.0.jar | grep -q 'com/noobvill/power/api/PowerContentApi.class'
-          unzip -l workspace/build/libs/noobvill-power-forcefields-1.3.0.jar | grep -q 'com/noobvill/power/EmpBlock.class'
-          unzip -l workspace/build/libs/noobvill-power-forcefields-1.3.0-deobf.jar | grep -q 'com/noobvill/power/api/PowerContentApi.class'
-          unzip -l workspace/build/distributions/noobvill-power-forcefields-1.3.0-api.zip | grep -q 'PowerContentApi.java'
+          test -f workspace/build/libs/noobvill-power-forcefields-1.4.0.jar
+          test -f workspace/build/libs/noobvill-power-forcefields-1.4.0-deobf.jar
+          test -f workspace/build/distributions/noobvill-power-forcefields-1.4.0-api.zip
+          unzip -p workspace/build/libs/noobvill-power-forcefields-1.4.0.jar fabric.mod.json | grep -q '"id": "noobvill_power"'
+          unzip -l workspace/build/libs/noobvill-power-forcefields-1.4.0.jar | grep -q 'com/noobvill/power/api/PowerContentApi.class'
+          unzip -l workspace/build/libs/noobvill-power-forcefields-1.4.0.jar | grep -q 'com/noobvill/power/EmpBlock.class'
+          unzip -l workspace/build/libs/noobvill-power-forcefields-1.4.0.jar | grep -q 'assets/noobvill_power/blockstates/cobblestone_piston.json'
+          unzip -l workspace/build/libs/noobvill-power-forcefields-1.4.0.jar | grep -q 'assets/noobvill_power/textures/block/cobblestone_piston_side.png'
+          unzip -l workspace/build/libs/noobvill-power-forcefields-1.4.0.jar | grep -q 'data/noobvill_power/recipe/cobblestone_piston.json'
+          unzip -l workspace/build/libs/noobvill-power-forcefields-1.4.0-deobf.jar | grep -q 'com/noobvill/power/api/PowerContentApi.class'
+          unzip -l workspace/build/distributions/noobvill-power-forcefields-1.4.0-api.zip | grep -q 'PowerContentApi.java'
 
       - name: Collect requested deliverables
         run: |
           mkdir release
-          cp workspace/build/libs/noobvill-power-forcefields-1.3.0.jar release/
-          cp workspace/build/libs/noobvill-power-forcefields-1.3.0-deobf.jar release/
-          cp workspace/build/distributions/noobvill-power-forcefields-1.3.0-api.zip release/
-          cp source.zip release/noobvill-power-forcefields-1.3.0-source.zip
+          cp workspace/build/libs/noobvill-power-forcefields-1.4.0.jar release/
+          cp workspace/build/libs/noobvill-power-forcefields-1.4.0-deobf.jar release/
+          cp workspace/build/distributions/noobvill-power-forcefields-1.4.0-api.zip release/
+          cp source.zip release/noobvill-power-forcefields-1.4.0-source.zip
           sha256sum release/* > release/SHA256SUMS.txt
 
       - name: Upload requested deliverables
         uses: actions/upload-artifact@v4
         with:
-          name: noobvill-power-forcefields-1.3.0
+          name: noobvill-power-forcefields-1.4.0
           path: release/
           if-no-files-found: error
           retention-days: 30
@@ -78,5 +84,5 @@ jobs:
           git clean -fdx
           cp /tmp/noobvill-release/* .
           git add .
-          git commit -m "Verified Noobvill Power and Forcefields 1.3.0 artifacts"
+          git commit -m "Verified Noobvill Power and Forcefields 1.4.0 artifacts"
           git push --force origin HEAD:build-artifacts

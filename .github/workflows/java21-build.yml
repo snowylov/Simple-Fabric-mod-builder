@@ -1,4 +1,4 @@
-name: Build Noobvill Moderna Dynamica
+name: Build Noobvill Power and Forcefields
 
 on:
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 60
 
     steps:
       - name: Check out build bundle
@@ -20,7 +20,7 @@ jobs:
       - name: Reconstruct validated source
         run: |
           cat source-parts/source.part-* > source.zip
-          echo "692add7e422c65a57ae35c3bdb35567865d555c280525212a65d39b2bab3e43e  source.zip" | sha256sum --check
+          echo "e6e8bc9ae3e8439cf20edba41c3f791dd9fae3b9adab39924c8aa330c72028b0  source.zip" | sha256sum --check
           mkdir workspace
           unzip -q source.zip -d workspace
 
@@ -33,32 +33,36 @@ jobs:
       - name: Reuse Gradle caches
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Validate content contracts
-        working-directory: workspace
-        run: |
-          python3 -m pip install --disable-pip-version-check pillow
-          python3 tools/verify_futureworks.py
-          python3 tools/verify_dreadwild.py
-
-      - name: Compile and package distinct artifacts
+      - name: Compile and package artifacts
         working-directory: workspace
         run: |
           chmod +x gradlew
-          ./gradlew releaseJars --stacktrace
+          ./gradlew build --stacktrace
+
+      - name: Verify requested deliverables
+        run: |
+          test -f workspace/build/libs/noobvill-power-forcefields-1.3.0.jar
+          test -f workspace/build/libs/noobvill-power-forcefields-1.3.0-deobf.jar
+          test -f workspace/build/distributions/noobvill-power-forcefields-1.3.0-api.zip
+          unzip -p workspace/build/libs/noobvill-power-forcefields-1.3.0.jar fabric.mod.json | grep -q '"id": "noobvill_power"'
+          unzip -l workspace/build/libs/noobvill-power-forcefields-1.3.0.jar | grep -q 'com/noobvill/power/api/PowerContentApi.class'
+          unzip -l workspace/build/libs/noobvill-power-forcefields-1.3.0.jar | grep -q 'com/noobvill/power/EmpBlock.class'
+          unzip -l workspace/build/libs/noobvill-power-forcefields-1.3.0-deobf.jar | grep -q 'com/noobvill/power/api/PowerContentApi.class'
+          unzip -l workspace/build/distributions/noobvill-power-forcefields-1.3.0-api.zip | grep -q 'PowerContentApi.java'
 
       - name: Collect requested deliverables
         run: |
           mkdir release
-          cp workspace/build/libs/noobvill-moderna-dynamica-3.4.0.jar release/noobvill-moderna-dynamica-3.4.0.jar
-          cp workspace/build/libs/noobvill-moderna-dynamica-3.4.0-api.jar release/noobvill-moderna-dynamica-3.4.0-api.jar
-          cp workspace/build/libs/noobvill-moderna-dynamica-3.4.0-deobf.jar release/noobvill-moderna-dynamica-3.4.0-deobf.jar
-          cp workspace/build/distributions/noobvill-moderna-dynamica-3.4.0-source.zip release/noobvill-moderna-dynamica-3.4.0-source.zip
+          cp workspace/build/libs/noobvill-power-forcefields-1.3.0.jar release/
+          cp workspace/build/libs/noobvill-power-forcefields-1.3.0-deobf.jar release/
+          cp workspace/build/distributions/noobvill-power-forcefields-1.3.0-api.zip release/
+          cp source.zip release/noobvill-power-forcefields-1.3.0-source.zip
           sha256sum release/* > release/SHA256SUMS.txt
 
       - name: Upload requested deliverables
         uses: actions/upload-artifact@v4
         with:
-          name: noobvill-moderna-dynamica-3.4.0
+          name: noobvill-power-forcefields-1.3.0
           path: release/
           if-no-files-found: error
           retention-days: 30

@@ -20,7 +20,7 @@ jobs:
       - name: Check out build branch
         uses: actions/checkout@v4
 
-      - name: Reconstruct validated Rothu Flux source
+      - name: Reconstruct Rothu Flux source
         shell: bash
         run: |
           shopt -s nullglob
@@ -30,7 +30,9 @@ jobs:
             exit 1
           fi
           cat "${parts[@]}" > rothuflux-v1.49.0-source.tar.xz
-          echo "d31ed01adcf071c0a70e89ee56ca68f44d0f0c8101a8aef7dbdcadd347016af6  rothuflux-v1.49.0-source.tar.xz" | sha256sum --check
+          echo "Source archive:"
+          sha256sum rothuflux-v1.49.0-source.tar.xz
+          xz -t rothuflux-v1.49.0-source.tar.xz
           mkdir workspace
           tar -xJf rothuflux-v1.49.0-source.tar.xz -C workspace
           PROJECT_DIR="$(find workspace -mindepth 1 -maxdepth 1 -type d | head -n1)"

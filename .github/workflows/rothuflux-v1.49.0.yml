@@ -1,4 +1,4 @@
-name: Build Rothu Flux v1.49.0
+name: Build and Release Rothu Flux v1.49.0
 
 on:
   workflow_dispatch:
@@ -6,11 +6,11 @@ on:
     branches:
       - rothuflux-v1.49.0-build
     paths:
-      - 'rothuflux-v1.49.0-source.zip.b64'
+      - 'source-parts/**'
       - '.github/workflows/rothuflux-v1.49.0.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -21,15 +21,16 @@ jobs:
       - name: Check out build branch
         uses: actions/checkout@v4
 
-      - name: Verify source bundle exists
-        run: |
-          test -f rothuflux-v1.49.0-source.zip.b64 || {
-            echo "::error::Upload rothuflux-v1.49.0-source.zip.b64 to this branch first."
-            exit 1
-          }
-
       - name: Reconstruct validated Rothu Flux source
+        shell: bash
         run: |
+          shopt -s nullglob
+          parts=(source-parts/part-*.b64)
+          if [ "${#parts[@]}" -eq 0 ]; then
+            echo "::error::No source-parts/part-*.b64 files were committed."
+            exit 1
+          fi
+          cat "${parts[@]}" > rothuflux-v1.49.0-source.zip.b64
           base64 -d rothuflux-v1.49.0-source.zip.b64 > rothuflux-v1.49.0-source.zip
           echo "f7111e982d71bfb1bcb9edbc1c2573b9bf102d955a877afbaaddbf2330fcbfd4  rothuflux-v1.49.0-source.zip" | sha256sum --check
           mkdir workspace
@@ -62,8 +63,7 @@ jobs:
 
       - name: Compile and package
         working-directory: ${{ env.PROJECT_DIR }}
-        run: |
-          gradle --no-daemon --stacktrace build
+        run: gradle --no-daemon --stacktrace build
 
       - name: Verify requested artifacts
         run: |
@@ -71,12 +71,10 @@ jobs:
           DEOBF_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0-deobf.jar"
           API_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0-api.jar"
           SRC_ZIP="$PROJECT_DIR/build/distributions/rothu-flux-1.49.0-src.zip"
-
           test -f "$GAME_JAR"
           test -f "$DEOBF_JAR"
           test -f "$API_JAR"
           test -f "$SRC_ZIP"
-
           unzip -p "$GAME_JAR" fabric.mod.json | grep -q '"id": "rothuflux"'
           unzip -l "$GAME_JAR" | grep -q 'com/noobvill/rothuflux/RothuFlux.class'
           unzip -l "$GAME_JAR" | grep -q 'com/noobvill/rothuflux/genetics/CropGeneticsManager.class'
@@ -91,10 +89,17 @@ jobs:
           cp "$PROJECT_DIR/build/distributions/rothu-flux-1.49.0-src.zip" release/
           sha256sum release/* > release/SHA256SUMS.txt
 
-      - name: Upload Rothu Flux artifacts
+      - name: Upload workflow artifact
         uses: actions/upload-artifact@v4
         with:
           name: rothu-flux-v1.49.0
           path: release/
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete v1.49.0 --yes --cleanup-tag || true
+          gh release create v1.49.0 release/*             --target "${GITHUB_SHA}"             --title "Rothu Flux v1.49.0"             --notes "Rothu Flux v1.49.0 build: game-ready, deobfuscated, API, and source artifacts."

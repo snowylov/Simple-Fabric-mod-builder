@@ -6,8 +6,7 @@ on:
     branches:
       - rothuflux-v1.49.0-build
     paths:
-      - 'source-parts/**'
-      - '.github/workflows/rothuflux-v1.49.0.yml'
+      - 'source-parts/READY'
 
 permissions:
   contents: write
@@ -30,11 +29,11 @@ jobs:
             echo "::error::No source-parts/part-*.b64 files were committed."
             exit 1
           fi
-          cat "${parts[@]}" > rothuflux-v1.49.0-source.zip.b64
-          base64 -d rothuflux-v1.49.0-source.zip.b64 > rothuflux-v1.49.0-source.zip
-          echo "f7111e982d71bfb1bcb9edbc1c2573b9bf102d955a877afbaaddbf2330fcbfd4  rothuflux-v1.49.0-source.zip" | sha256sum --check
+          cat "${parts[@]}" > rothuflux-v1.49.0-source.tar.xz.b64
+          base64 -d rothuflux-v1.49.0-source.tar.xz.b64 > rothuflux-v1.49.0-source.tar.xz
+          echo "d31ed01adcf071c0a70e89ee56ca68f44d0f0c8101a8aef7dbdcadd347016af6  rothuflux-v1.49.0-source.tar.xz" | sha256sum --check
           mkdir workspace
-          unzip -q rothuflux-v1.49.0-source.zip -d workspace
+          tar -xJf rothuflux-v1.49.0-source.tar.xz -C workspace
           PROJECT_DIR="$(find workspace -mindepth 1 -maxdepth 1 -type d | head -n1)"
           test -n "$PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"

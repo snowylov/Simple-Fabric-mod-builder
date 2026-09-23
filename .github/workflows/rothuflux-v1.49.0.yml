@@ -20,21 +20,15 @@ jobs:
       - name: Check out build branch
         uses: actions/checkout@v4
 
-      - name: Reconstruct Rothu Flux source
+      - name: Reconstruct validated Rothu Flux source
         shell: bash
         run: |
-          shopt -s nullglob
-          parts=(source-parts/source.part-*)
-          if [ "${#parts[@]}" -eq 0 ]; then
-            echo "::error::No source-parts/source.part-* files were committed."
-            exit 1
-          fi
-          cat "${parts[@]}" > rothuflux-v1.49.0-source.tar.xz
-          echo "Source archive:"
-          sha256sum rothuflux-v1.49.0-source.tar.xz
-          xz -t rothuflux-v1.49.0-source.tar.xz
+          test -f source-parts/source.part-000
+          cp source-parts/source.part-000 rothuflux-v1.49.0-source.zip
+          echo "40bdd9ed605707b003cea51d563250ebe432e7007600c9da1e854e00bb925cd4  rothuflux-v1.49.0-source.zip" | sha256sum --check
+          unzip -tq rothuflux-v1.49.0-source.zip
           mkdir workspace
-          tar -xJf rothuflux-v1.49.0-source.tar.xz -C workspace
+          unzip -q rothuflux-v1.49.0-source.zip -d workspace
           PROJECT_DIR="$(find workspace -mindepth 1 -maxdepth 1 -type d | head -n1)"
           test -n "$PROJECT_DIR"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"

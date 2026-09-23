@@ -24,13 +24,12 @@ jobs:
         shell: bash
         run: |
           shopt -s nullglob
-          parts=(source-parts/part-*.b64)
+          parts=(source-parts/source.part-*)
           if [ "${#parts[@]}" -eq 0 ]; then
-            echo "::error::No source-parts/part-*.b64 files were committed."
+            echo "::error::No source-parts/source.part-* files were committed."
             exit 1
           fi
-          cat "${parts[@]}" > rothuflux-v1.49.0-source.tar.xz.b64
-          base64 -d rothuflux-v1.49.0-source.tar.xz.b64 > rothuflux-v1.49.0-source.tar.xz
+          cat "${parts[@]}" > rothuflux-v1.49.0-source.tar.xz
           echo "d31ed01adcf071c0a70e89ee56ca68f44d0f0c8101a8aef7dbdcadd347016af6  rothuflux-v1.49.0-source.tar.xz" | sha256sum --check
           mkdir workspace
           tar -xJf rothuflux-v1.49.0-source.tar.xz -C workspace
@@ -69,11 +68,9 @@ jobs:
           GAME_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0.jar"
           DEOBF_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0-deobf.jar"
           API_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0-api.jar"
-          SRC_ZIP="$PROJECT_DIR/build/distributions/rothu-flux-1.49.0-src.zip"
           test -f "$GAME_JAR"
           test -f "$DEOBF_JAR"
           test -f "$API_JAR"
-          test -f "$SRC_ZIP"
           unzip -p "$GAME_JAR" fabric.mod.json | grep -q '"id": "rothuflux"'
           unzip -l "$GAME_JAR" | grep -q 'com/noobvill/rothuflux/RothuFlux.class'
           unzip -l "$GAME_JAR" | grep -q 'com/noobvill/rothuflux/genetics/CropGeneticsManager.class'
@@ -85,7 +82,6 @@ jobs:
           cp "$PROJECT_DIR/build/libs/rothu-flux-1.49.0.jar" release/rothu-flux-1.49.0-game-ready.jar
           cp "$PROJECT_DIR/build/libs/rothu-flux-1.49.0-deobf.jar" release/
           cp "$PROJECT_DIR/build/libs/rothu-flux-1.49.0-api.jar" release/
-          cp "$PROJECT_DIR/build/distributions/rothu-flux-1.49.0-src.zip" release/
           sha256sum release/* > release/SHA256SUMS.txt
 
       - name: Upload workflow artifact
@@ -101,4 +97,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release delete v1.49.0 --yes --cleanup-tag || true
-          gh release create v1.49.0 release/*             --target "${GITHUB_SHA}"             --title "Rothu Flux v1.49.0"             --notes "Rothu Flux v1.49.0 build: game-ready, deobfuscated, API, and source artifacts."
+          gh release create v1.49.0 release/* \
+            --target "$GITHUB_SHA" \
+            --title "Rothu Flux v1.49.0" \
+            --notes "Rothu Flux v1.49.0: game-ready, deobfuscated, and API JARs."

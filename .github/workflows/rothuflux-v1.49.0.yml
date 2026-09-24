@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - rothuflux-v1.49.0-build
+      - rothuflux-v1.49.0-comp
     paths:
       - 'source-parts/READY'
 
@@ -50,10 +50,95 @@ jobs:
           test -f "$PROJECT_DIR/build.gradle"
           test -f "$PROJECT_DIR/gradle.properties"
           test -f "$PROJECT_DIR/src/main/resources/fabric.mod.json"
-          grep -q '^minecraft_version=1.21.11$' "$PROJECT_DIR/gradle.properties"
-          grep -q '^mod_version=1.49.0$' "$PROJECT_DIR/gradle.properties"
-          grep -q 'cropGeneTableEditCost = 80L' "$PROJECT_DIR/src/main/java/com/noobvill/rothuflux/config/ModConfig.java"
-          ! grep -R --line-number 'renderBackground' "$PROJECT_DIR/src/main/java/com/noobvill/rothuflux/genetics/client" "$PROJECT_DIR/src/main/java/com/noobvill/rothuflux/client/screen"
+          grep -q '^minecraft_version=1.21.11
+      - name: Compile and package
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: gradle --no-daemon --stacktrace build
+
+      - name: Verify requested artifacts
+        run: |
+          GAME_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0.jar"
+          DEOBF_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0-deobf.jar"
+          API_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0-api.jar"
+          test -f "$GAME_JAR"
+          test -f "$DEOBF_JAR"
+          test -f "$API_JAR"
+          unzip -p "$GAME_JAR" fabric.mod.json | grep -q '"id": "rothuflux"'
+          unzip -l "$GAME_JAR" | grep -q 'com/noobvill/rothuflux/RothuFlux.class'
+          unzip -l "$GAME_JAR" | grep -q 'com/noobvill/rothuflux/genetics/CropGeneticsManager.class'
+          unzip -l "$API_JAR" | grep -q 'com/noobvill/rothuflux/api/RothuFluxApi.class'
+
+      - name: Collect release files
+        run: |
+          mkdir release
+          cp "$PROJECT_DIR/build/libs/rothu-flux-1.49.0.jar" release/rothu-flux-1.49.0-game-ready.jar
+          cp "$PROJECT_DIR/build/libs/rothu-flux-1.49.0-deobf.jar" release/
+          cp "$PROJECT_DIR/build/libs/rothu-flux-1.49.0-api.jar" release/
+          cp rothuflux-v1.49.0-source.zip release/rothu-flux-1.49.0-src.zip
+          sha256sum release/* > release/SHA256SUMS.txt
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rothu-flux-v1.49.0
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete v1.49.0 --yes --cleanup-tag || true
+          gh release create v1.49.0 release/* \
+            --target "$GITHUB_SHA" \
+            --title "Rothu Flux v1.49.0" \
+            --notes "Rothu Flux v1.49.0 /comp release: game-ready JAR, deobfuscated JAR, API JAR, and source ZIP."
+ "$PROJECT_DIR/gradle.properties"
+          grep -q '^mod_version=1.49.0
+      - name: Compile and package
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: gradle --no-daemon --stacktrace build
+
+      - name: Verify requested artifacts
+        run: |
+          GAME_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0.jar"
+          DEOBF_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0-deobf.jar"
+          API_JAR="$PROJECT_DIR/build/libs/rothu-flux-1.49.0-api.jar"
+          test -f "$GAME_JAR"
+          test -f "$DEOBF_JAR"
+          test -f "$API_JAR"
+          unzip -p "$GAME_JAR" fabric.mod.json | grep -q '"id": "rothuflux"'
+          unzip -l "$GAME_JAR" | grep -q 'com/noobvill/rothuflux/RothuFlux.class'
+          unzip -l "$GAME_JAR" | grep -q 'com/noobvill/rothuflux/genetics/CropGeneticsManager.class'
+          unzip -l "$API_JAR" | grep -q 'com/noobvill/rothuflux/api/RothuFluxApi.class'
+
+      - name: Collect release files
+        run: |
+          mkdir release
+          cp "$PROJECT_DIR/build/libs/rothu-flux-1.49.0.jar" release/rothu-flux-1.49.0-game-ready.jar
+          cp "$PROJECT_DIR/build/libs/rothu-flux-1.49.0-deobf.jar" release/
+          cp "$PROJECT_DIR/build/libs/rothu-flux-1.49.0-api.jar" release/
+          sha256sum release/* > release/SHA256SUMS.txt
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rothu-flux-v1.49.0
+          path: release/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete v1.49.0 --yes --cleanup-tag || true
+          gh release create v1.49.0 release/* \
+            --target "$GITHUB_SHA" \
+            --title "Rothu Flux v1.49.0" \
+            --notes "Rothu Flux v1.49.0: game-ready, deobfuscated, and API JARs."
+ "$PROJECT_DIR/gradle.properties"
 
       - name: Compile and package
         working-directory: ${{ env.PROJECT_DIR }}

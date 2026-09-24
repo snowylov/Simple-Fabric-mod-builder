@@ -19,4 +19,10 @@ brain = brain_path.read_text(encoding="utf-8")
 brain = brain.replace("child.getBrain()", "child.getWormBrain()")
 brain = brain.replace(".getPos()", ".getEntityPos()")
 brain_path.write_text(brain, encoding="utf-8")
+
+model_path = root / "src/client/java/com/noobvill/celegans/client/model/CElegansEntityModel.java"
+model = model_path.read_text(encoding="utf-8")
+model = model.replace("import net.minecraft.client.render.RenderLayer;\n", "")
+model = model.replace("super(root, RenderLayer::getEntityTranslucent);", "super(root);")
+model_path.write_text(model, encoding="utf-8")
 PY

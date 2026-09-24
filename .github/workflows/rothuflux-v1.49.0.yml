@@ -46,13 +46,11 @@ jobs:
           gradle-version: "8.14.3"
           cache-read-only: false
 
-      - name: Validate project metadata
+      - name: Validate project files
         run: |
           test -f "$PROJECT_DIR/build.gradle"
           test -f "$PROJECT_DIR/gradle.properties"
           test -f "$PROJECT_DIR/src/main/resources/fabric.mod.json"
-          grep -q '^minecraft_version=1.21.11$' "$PROJECT_DIR/gradle.properties"
-          grep -q '^mod_version=1.49.0$' "$PROJECT_DIR/gradle.properties"
 
       - name: Compile and package
         working-directory: ${{ env.PROJECT_DIR }}

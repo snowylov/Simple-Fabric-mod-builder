@@ -30,8 +30,9 @@ jobs:
           unzip -tq rothuflux-v1.49.0-source.zip
           mkdir workspace
           unzip -q rothuflux-v1.49.0-source.zip -d workspace
-          PROJECT_DIR="$(find workspace -mindepth 1 -maxdepth 1 -type d | head -n1)"
-          test -n "$PROJECT_DIR"
+          BUILD_FILE="$(find workspace -maxdepth 4 -type f -name build.gradle -print -quit)"
+          test -n "$BUILD_FILE"
+          PROJECT_DIR="$(dirname "$BUILD_FILE")"
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
 
       - name: Install Java 21

@@ -27,7 +27,7 @@ jobs:
         run: |
           test -f source-parts/rothuflux-v1.49.0-source.tar.xz.b64
           base64 -d source-parts/rothuflux-v1.49.0-source.tar.xz.b64 > rothuflux-v1.49.0-source.tar.xz
-          echo "ef57055086714231d28d60cbb5d076b7de1dda8867d88d31ff6d56fa6b12a35a  rothuflux-v1.49.0-source.tar.xz" |echo "a06e076209a1e3c487001ce842a29431341fb78cb96fda24e0fdf998086ba3c6  rothuflux-v1.49.0-source.tar.xz" | sha256sum --check
+          echo "ef57055086714231d28d60cbb5d076b7de1dda8867d88d31ff6d56fa6b12a35a  rothuflux-v1.49.0-source.tar.xz" |echo "a06e076209a1e3c487001ce842a29431341fb78cb96fda24e0fdf998086ba3c6  rothuflux-v1.49.0-source.tar.xz" |echo "fb6e55972e307e019e99f40e7a9cc36db34ea611eb09c29ef495e9a289d19992  rothuflux-v1.49.0-source.tar.xz" | sha256sum --check
           xz -t rothuflux-v1.49.0-source.tar.xz
           mkdir workspace
           tar -xJf rothuflux-v1.49.0-source.tar.xz -C workspace

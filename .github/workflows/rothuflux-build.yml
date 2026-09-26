@@ -99,6 +99,349 @@ jobs:
               p.write_text(s)
           PY
 
+      - name: Add radius wireless redstone update
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p workspace/src/main/java/com/rothuflux/block
+          mkdir -p workspace/src/main/resources/assets/rothuflux/{blockstates,items,models/block,models/item,textures/block}
+          mkdir -p workspace/src/main/resources/data/rothuflux/loot_table/blocks
+
+          cat > workspace/src/main/java/com/rothuflux/block/RadiusWirelessRedstoneBlock.java <<'EOF'
+          package com.rothuflux.block;
+
+          import net.minecraft.block.Block;
+          import net.minecraft.block.BlockState;
+          import net.minecraft.entity.player.PlayerEntity;
+          import net.minecraft.item.ItemStack;
+          import net.minecraft.item.Items;
+          import net.minecraft.server.world.ServerWorld;
+          import net.minecraft.state.StateManager;
+          import net.minecraft.state.property.BooleanProperty;
+          import net.minecraft.util.ActionResult;
+          import net.minecraft.util.Hand;
+          import net.minecraft.util.hit.BlockHitResult;
+          import net.minecraft.util.math.BlockPos;
+          import net.minecraft.util.math.Direction;
+          import net.minecraft.util.math.random.Random;
+          import net.minecraft.world.BlockView;
+          import net.minecraft.world.World;
+          import net.minecraft.world.block.WireOrientation;
+          import org.jetbrains.annotations.Nullable;
+
+          public class RadiusWirelessRedstoneBlock extends Block {
+              public static final BooleanProperty POWERED = BooleanProperty.of("powered");
+              public static final BooleanProperty EXTENDED_RANGE = BooleanProperty.of("extended_range");
+              public static final int NORMAL_RANGE = 16;
+              public static final int EXTENDED_RADIUS = 24;
+
+              public RadiusWirelessRedstoneBlock(Settings settings) {
+                  super(settings);
+                  setDefaultState(getStateManager().getDefaultState()
+                          .with(POWERED, false)
+                          .with(EXTENDED_RANGE, false));
+              }
+
+              @Override
+              protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+                  builder.add(POWERED, EXTENDED_RANGE);
+              }
+
+              @Override
+              protected boolean emitsRedstonePower(BlockState state) {
+                  return true;
+              }
+
+              @Override
+              protected int getWeakRedstonePower(BlockState state, BlockView world, BlockPos pos, Direction direction) {
+                  return state.get(POWERED) ? 15 : 0;
+              }
+
+              @Override
+              protected int getStrongRedstonePower(BlockState state, BlockView world, BlockPos pos, Direction direction) {
+                  return state.get(POWERED) ? 15 : 0;
+              }
+
+              @Override
+              protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
+                  super.onBlockAdded(state, world, pos, oldState, notify);
+                  if (!world.isClient() && !oldState.isOf(this)) {
+                      world.scheduleBlockTick(pos, this, 1);
+                  }
+              }
+
+              @Override
+              protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock,
+                                            @Nullable WireOrientation wireOrientation, boolean notify) {
+                  if (!world.isClient()) {
+                      world.scheduleBlockTick(pos, this, 1);
+                  }
+              }
+
+              @Override
+              protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+                  boolean networkPowered = hasExternalSourceInWirelessRange(world, pos, state);
+                  synchronizePeers(world, pos, state, networkPowered);
+              }
+
+              private boolean hasExternalSourceInWirelessRange(ServerWorld world, BlockPos origin, BlockState originState) {
+                  int originRange = getRange(originState);
+                  for (BlockPos candidate : BlockPos.iterateOutwards(origin, EXTENDED_RADIUS, EXTENDED_RADIUS, EXTENDED_RADIUS)) {
+                      BlockState candidateState = world.getBlockState(candidate);
+                      if (!candidateState.isOf(this)) continue;
+
+                      int candidateRange = getRange(candidateState);
+                      double distanceSquared = candidate.getSquaredDistance(origin);
+                      int effectiveRange = Math.max(originRange, candidateRange);
+                      if (distanceSquared > (double) effectiveRange * effectiveRange) continue;
+
+                      if (isExternallyPowered(world, candidate)) return true;
+                  }
+                  return false;
+              }
+
+              private boolean isExternallyPowered(ServerWorld world, BlockPos pos) {
+                  for (Direction direction : Direction.values()) {
+                      BlockPos neighborPos = pos.offset(direction);
+                      BlockState neighborState = world.getBlockState(neighborPos);
+                      if (neighborState.isOf(this)) continue;
+                      if (world.getEmittedRedstonePower(neighborPos, direction) > 0) return true;
+                  }
+                  return false;
+              }
+
+              private void synchronizePeers(ServerWorld world, BlockPos origin, BlockState originState, boolean powered) {
+                  int originRange = getRange(originState);
+                  for (BlockPos candidate : BlockPos.iterateOutwards(origin, EXTENDED_RADIUS, EXTENDED_RADIUS, EXTENDED_RADIUS)) {
+                      BlockState state = world.getBlockState(candidate);
+                      if (!state.isOf(this)) continue;
+
+                      int candidateRange = getRange(state);
+                      int effectiveRange = Math.max(originRange, candidateRange);
+                      if (candidate.getSquaredDistance(origin) > (double) effectiveRange * effectiveRange) continue;
+                      if (state.get(POWERED) == powered) continue;
+
+                      world.setBlockState(candidate, state.with(POWERED, powered), Block.NOTIFY_ALL);
+                      world.updateNeighborsAlways(candidate, this, null);
+                  }
+              }
+
+              private int getRange(BlockState state) {
+                  return state.get(EXTENDED_RANGE) ? EXTENDED_RADIUS : NORMAL_RANGE;
+              }
+
+              @Override
+              protected ActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos,
+                                                   PlayerEntity player, Hand hand, BlockHitResult hit) {
+                  if (!stack.isOf(Items.DEBUG_STICK)) return ActionResult.PASS;
+                  if (!world.isClient()) {
+                      boolean extended = !state.get(EXTENDED_RANGE);
+                      world.setBlockState(pos, state.with(EXTENDED_RANGE, extended), Block.NOTIFY_ALL);
+                      player.sendMessage(net.minecraft.text.Text.literal(
+                              "Wireless redstone range: " + (extended ? EXTENDED_RADIUS : NORMAL_RANGE) + " blocks"), true);
+                      world.scheduleBlockTick(pos, this, 1);
+                  }
+                  return ActionResult.SUCCESS;
+              }
+          }
+          EOF
+
+          cat > workspace/src/main/java/com/rothuflux/block/RadiusRedstoneTorchControllerBlock.java <<'EOF'
+          package com.rothuflux.block;
+
+          import net.minecraft.block.Block;
+          import net.minecraft.block.BlockState;
+          import net.minecraft.block.Blocks;
+          import net.minecraft.block.RedstoneTorchBlock;
+          import net.minecraft.entity.player.PlayerEntity;
+          import net.minecraft.item.ItemStack;
+          import net.minecraft.item.Items;
+          import net.minecraft.server.world.ServerWorld;
+          import net.minecraft.state.StateManager;
+          import net.minecraft.state.property.BooleanProperty;
+          import net.minecraft.util.ActionResult;
+          import net.minecraft.util.Hand;
+          import net.minecraft.util.hit.BlockHitResult;
+          import net.minecraft.util.math.BlockPos;
+          import net.minecraft.util.math.Direction;
+          import net.minecraft.util.math.random.Random;
+          import net.minecraft.world.BlockView;
+          import net.minecraft.world.World;
+          import net.minecraft.world.block.WireOrientation;
+          import org.jetbrains.annotations.Nullable;
+
+          public class RadiusRedstoneTorchControllerBlock extends Block {
+              public static final BooleanProperty POWERED = BooleanProperty.of("powered");
+              public static final BooleanProperty EXTENDED_RANGE = BooleanProperty.of("extended_range");
+              public static final int NORMAL_RANGE = 16;
+              public static final int EXTENDED_RADIUS = 24;
+
+              public RadiusRedstoneTorchControllerBlock(Settings settings) {
+                  super(settings);
+                  setDefaultState(getStateManager().getDefaultState().with(POWERED, false).with(EXTENDED_RANGE, false));
+              }
+
+              @Override
+              protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+                  builder.add(POWERED, EXTENDED_RANGE);
+              }
+
+              @Override
+              protected boolean emitsRedstonePower(BlockState state) {
+                  return true;
+              }
+
+              @Override
+              protected int getWeakRedstonePower(BlockState state, BlockView world, BlockPos pos, Direction direction) {
+                  return state.get(POWERED) ? 15 : 0;
+              }
+
+              @Override
+              protected void onBlockAdded(BlockState state, World world, BlockPos pos, BlockState oldState, boolean notify) {
+                  super.onBlockAdded(state, world, pos, oldState, notify);
+                  if (!world.isClient() && !oldState.isOf(this)) world.scheduleBlockTick(pos, this, 1);
+              }
+
+              @Override
+              protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock,
+                                            @Nullable WireOrientation wireOrientation, boolean notify) {
+                  if (!world.isClient()) world.scheduleBlockTick(pos, this, 1);
+              }
+
+              @Override
+              protected void scheduledTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+                  boolean powered = isExternallyPowered(world, pos);
+                  BlockState next = state;
+                  if (state.get(POWERED) != powered) {
+                      next = state.with(POWERED, powered);
+                      world.setBlockState(pos, next, Block.NOTIFY_ALL);
+                      world.updateNeighborsAlways(pos, this, null);
+                  }
+                  setNearbyTorches(world, pos, next, !powered);
+              }
+
+              private boolean isExternallyPowered(ServerWorld world, BlockPos pos) {
+                  for (Direction direction : Direction.values()) {
+                      BlockPos neighborPos = pos.offset(direction);
+                      BlockState neighborState = world.getBlockState(neighborPos);
+                      if (neighborState.isOf(this)) continue;
+                      if (world.getEmittedRedstonePower(neighborPos, direction) > 0) return true;
+                  }
+                  return false;
+              }
+
+              private void setNearbyTorches(ServerWorld world, BlockPos origin, BlockState controllerState, boolean lit) {
+                  int range = controllerState.get(EXTENDED_RANGE) ? EXTENDED_RADIUS : NORMAL_RANGE;
+                  for (BlockPos target : BlockPos.iterateOutwards(origin, range, range, range)) {
+                      if (target.getSquaredDistance(origin) > (double) range * range) continue;
+                      BlockState torchState = world.getBlockState(target);
+                      if (!torchState.isOf(Blocks.REDSTONE_TORCH) && !torchState.isOf(Blocks.REDSTONE_WALL_TORCH)) continue;
+                      if (!torchState.contains(RedstoneTorchBlock.LIT) || torchState.get(RedstoneTorchBlock.LIT) == lit) continue;
+                      world.setBlockState(target, torchState.with(RedstoneTorchBlock.LIT, lit), Block.NOTIFY_ALL);
+                      world.updateNeighborsAlways(target, torchState.getBlock(), null);
+                  }
+              }
+
+              @Override
+              protected ActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos,
+                                                   PlayerEntity player, Hand hand, BlockHitResult hit) {
+                  if (!stack.isOf(Items.DEBUG_STICK)) return ActionResult.PASS;
+                  if (!world.isClient()) {
+                      boolean extended = !state.get(EXTENDED_RANGE);
+                      BlockState next = state.with(EXTENDED_RANGE, extended);
+                      world.setBlockState(pos, next, Block.NOTIFY_ALL);
+                      player.sendMessage(net.minecraft.text.Text.literal(
+                              "Torch controller range: " + (extended ? EXTENDED_RADIUS : NORMAL_RANGE) + " blocks"), true);
+                      world.scheduleBlockTick(pos, this, 1);
+                  }
+                  return ActionResult.SUCCESS;
+              }
+          }
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import base64, json
+          root = Path("workspace")
+
+          blockstates = {
+              "radius_wireless_redstone": {
+                  "variants": {
+                      "powered=false,extended_range=false": {"model": "rothuflux:block/radius_wireless_redstone_off"},
+                      "powered=true,extended_range=false": {"model": "rothuflux:block/radius_wireless_redstone_on"},
+                      "powered=false,extended_range=true": {"model": "rothuflux:block/radius_wireless_redstone_off"},
+                      "powered=true,extended_range=true": {"model": "rothuflux:block/radius_wireless_redstone_on"}
+                  }
+              },
+              "radius_redstone_torch_controller": {
+                  "variants": {
+                      "powered=false,extended_range=false": {"model": "rothuflux:block/radius_redstone_torch_controller_off"},
+                      "powered=true,extended_range=false": {"model": "rothuflux:block/radius_redstone_torch_controller_on"},
+                      "powered=false,extended_range=true": {"model": "rothuflux:block/radius_redstone_torch_controller_off"},
+                      "powered=true,extended_range=true": {"model": "rothuflux:block/radius_redstone_torch_controller_on"}
+                  }
+              }
+          }
+          for name, obj in blockstates.items():
+              p = root / f"src/main/resources/assets/rothuflux/blockstates/{name}.json"
+              p.write_text(json.dumps(obj, indent=2) + "\n")
+
+          for name in ("radius_wireless_redstone", "radius_redstone_torch_controller"):
+              for state in ("off", "on"):
+                  (root / f"src/main/resources/assets/rothuflux/models/block/{name}_{state}.json").write_text(
+                      json.dumps({"parent":"minecraft:block/cube_all","textures":{"all":f"rothuflux:block/wireless_redstone_block_{state}"}}, indent=2) + "\n"
+                  )
+              (root / f"src/main/resources/assets/rothuflux/models/item/{name}.json").write_text(
+                  json.dumps({"parent":f"rothuflux:block/{name}_off"}, indent=2) + "\n"
+              )
+              (root / f"src/main/resources/assets/rothuflux/items/{name}.json").write_text(
+                  json.dumps({"model":{"type":"minecraft:model","model":f"rothuflux:item/{name}"}}, indent=2) + "\n"
+              )
+              (root / f"src/main/resources/data/rothuflux/loot_table/blocks/{name}.json").write_text(
+                  json.dumps({"type":"minecraft:block","pools":[{"rolls":1,"entries":[{"type":"minecraft:item","name":f"rothuflux:{name}"}]}]}, indent=2) + "\n"
+              )
+
+          on = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABpUlEQVR4nH2Tv47TQBDGfzNemzgkzRKlIN1BhUTLW9HyIjwaEmUkiqQ4oSC4KE7i9Q7F2LFzJ9hmtV5/f+abWfkSg9GvKJmD6W3/3xr+CQCfV7O7y5SNoPJif76+/jw7AcD3c7q7bNsWgIsGFoVw7IxF4SRrhVXl0DAF/WiuhLJk2bXsu0ExEdU4ZOFtYfzKsH5d3TAhSh4PZcnTNZF6bGN2y6IxY98JyyqwbY1Vz6HTsMrktg8ZavFsN2rs8lj/0zWxKDyXk4FGyaRsHDtjJq4UJw1ozNiokw2kx85DnUvvIKjwULrKpoDGhMZG1VqMTeHOAF7lMXAFb9u2Nc42qg62hxJ33ejqooGUbSQYejwTOPTA94UPyseQOWTuBuvNpMRbGxeF8Ni63ajwLTl4UI6SeRcAXDmoeIhDCQB/NNCYsOscsOs8k1rc1b4TahUu/XkuPcEtLBWiGrUIUR3YGEQ1lmWgFuNRxtk7WV/CkMEmCISKNT7KM1V+ozyUwrY1FpVPz7qXncskgw+zkTllIzw7f6pePqaTgUyf8/RiLuP+r28AfwH/qcn+F8VFwQAAAABJRU5ErkJggg=="
+          off = "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABWUlEQVR4nH2TUZIbMQhEXyNr7LiyZ0juf6ucIan1ODOCfKCRxrup5UcFSE3TIP28L0G3itiIcX5lx50LwI/77SUZAdLn86P9el8TAODP3l6S7p5giGKieVAsURaJpRjABAB47DtmRong6bOF6mKL4Bp5LrWO3KUyuZkZe3O8h1owtGgBTw8uxXg0HwzsLJZ61c2hs+Umsca8szenmIgAD7BKOs0DU1aqNttqkSAwQZsHUvq2kc63Tulmwjv6aE0Z37wzPbE2yDE9mo9HLRi0jxbXE2J01gPgmLEJtp65Wy7Kmxmb87JY1abwY4zFxN89QarEb3fezEbliriX+VDqIh4tAOxkcPVc59WDm4nj3dMDk/CTNi+LVEzIs0vrFRpBlZBSvA249vseHeDQ4GoGBgu5ykVij5zQo88fcpU/Mfh+KVPlAH3wj807mwfo/J3PiaOFQ/D/xQD+AUOZtqeWNYw7AAAAAElFTkSuQmCC"
+          texdir = root / "src/main/resources/assets/rothuflux/textures/block"
+          (texdir / "wireless_redstone_block_on.png").write_bytes(base64.b64decode(on))
+          (texdir / "wireless_redstone_block_off.png").write_bytes(base64.b64decode(off))
+
+          p = root / "src/main/java/com/rothuflux/registry/ModBlocks.java"
+          s = p.read_text()
+          if "RadiusWirelessRedstoneBlock" not in s:
+              s = s.replace("import com.rothuflux.block.WirelessReceiverBlock;\n",
+                            "import com.rothuflux.block.WirelessReceiverBlock;\nimport com.rothuflux.block.RadiusWirelessRedstoneBlock;\nimport com.rothuflux.block.RadiusRedstoneTorchControllerBlock;\n")
+              anchor = '    public static final Block WIRE_PLATE = register("wire_plate",'
+              defs = '''    public static final Block RADIUS_WIRELESS_REDSTONE = register("radius_wireless_redstone",
+                      new RadiusWirelessRedstoneBlock(AbstractBlock.Settings.create()
+                              .registryKey(blockKey("radius_wireless_redstone"))
+                              .mapColor(MapColor.RED)
+                              .strength(2.0F)
+                              .sounds(BlockSoundGroup.METAL)
+                      ));
+
+              public static final Block RADIUS_REDSTONE_TORCH_CONTROLLER = register("radius_redstone_torch_controller",
+                      new RadiusRedstoneTorchControllerBlock(AbstractBlock.Settings.create()
+                              .registryKey(blockKey("radius_redstone_torch_controller"))
+                              .mapColor(MapColor.RED)
+                              .strength(2.0F)
+                              .sounds(BlockSoundGroup.METAL)
+                      ));
+
+              '''
+              s = s.replace(anchor, defs + anchor)
+              s = s.replace("            entries.add(WIRELESS_RECEIVER);\n",
+                            "            entries.add(WIRELESS_RECEIVER);\n            entries.add(RADIUS_WIRELESS_REDSTONE);\n            entries.add(RADIUS_REDSTONE_TORCH_CONTROLLER);\n")
+              p.write_text(s)
+
+          lp = root / "src/main/resources/assets/rothuflux/lang/en_us.json"
+          lang = json.loads(lp.read_text())
+          lang["block.rothuflux.radius_wireless_redstone"] = "Wireless Redstone Block"
+          lang["block.rothuflux.radius_redstone_torch_controller"] = "Wireless Redstone Torch Controller"
+          lp.write_text(json.dumps(lang, indent=2) + "\n")
+          PY
+
       - name: Update Gradle wrapper to 9.2.0
         working-directory: workspace
         run: |

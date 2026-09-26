@@ -25,8 +25,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat rothuflux-tar/part-*.b64 > rothuflux_source.tar.xz.b64
+          cat rothuflux-tar/part-000.b64 rothuflux-tar/bridge-010000-012000.b64 > rothuflux_source.tar.xz.b64
+          head -c 12000 rothuflux-tar/part-001.b64 >> rothuflux_source.tar.xz.b64
+          cat rothuflux-tar/part-002.b64 rothuflux-tar/part-003.b64 rothuflux-tar/part-004.b64 rothuflux-tar/part-005.b64 rothuflux-tar/part-006.b64 >> rothuflux_source.tar.xz.b64
+          test "$(wc -c < rothuflux_source.tar.xz.b64)" -eq 72800
           base64 -d rothuflux_source.tar.xz.b64 > rothuflux_source.tar.xz
+          echo "4cdde57ce940142a64b66c98f3e4f60ec81cad2c3e070e2dd33654b41f4a3c59  rothuflux_source.tar.xz" | sha256sum --check
           mkdir workspace
           tar -xJf rothuflux_source.tar.xz -C workspace --strip-components=1
           test -f workspace/build.gradle

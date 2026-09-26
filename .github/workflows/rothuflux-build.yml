@@ -42,9 +42,72 @@ jobs:
         with:
           gradle-version: '9.2.0'
 
-      - name: Build Fabric mod
+      - name: Apply Minecraft 1.21.11 compatibility fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("workspace/src/main/java/com/rothuflux")
+
+          p = root / "block/MountedPlateBlock.java"
+          s = p.read_text()
+          s = s.replace("import net.minecraft.block.enums.AttachFace;\n", "")
+          s = s.replace("import net.minecraft.state.property.DirectionProperty;\n", "")
+          if "import net.minecraft.util.StringIdentifiable;" not in s:
+              s = s.replace("import net.minecraft.util.BlockMirror;\n", "import net.minecraft.util.BlockMirror;\nimport net.minecraft.util.StringIdentifiable;\n")
+          s = s.replace(
+              "public static final EnumProperty<AttachFace> FACE = Properties.ATTACH_FACE;\n    public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;",
+              """public enum MountFace implements StringIdentifiable {
+                  FLOOR("floor"), CEILING("ceiling"), WALL("wall");
+
+                  private final String id;
+                  MountFace(String id) { this.id = id; }
+
+                  @Override
+                  public String asString() { return id; }
+              }
+
+              public static final EnumProperty<MountFace> FACE = EnumProperty.of("face", MountFace.class);
+              public static final EnumProperty<Direction> FACING = Properties.HORIZONTAL_FACING;"""
+          )
+          s = s.replace("AttachFace.FLOOR", "MountFace.FLOOR")
+          s = s.replace("AttachFace.CEILING", "MountFace.CEILING")
+          s = s.replace("AttachFace.WALL", "MountFace.WALL")
+          s = s.replace("AttachFace face;", "MountFace face;")
+          p.write_text(s)
+
+          p = root / "block/RedAlloyWireBlock.java"
+          s = p.read_text()
+          s = s.replace("import net.minecraft.state.property.DirectionProperty;\n", "")
+          if "import net.minecraft.state.property.EnumProperty;" not in s:
+              s = s.replace("import net.minecraft.state.property.IntProperty;\n", "import net.minecraft.state.property.IntProperty;\nimport net.minecraft.state.property.EnumProperty;\n")
+          if "import net.minecraft.util.Identifier;" not in s:
+              s = s.replace("import net.minecraft.util.Hand;\n", "import net.minecraft.util.Hand;\nimport net.minecraft.util.Identifier;\n")
+          s = s.replace('public static final DirectionProperty MOUNT = DirectionProperty.of("mount");',
+                        'public static final EnumProperty<Direction> MOUNT = EnumProperty.of("mount", Direction.class);')
+          p.write_text(s)
+
+          for p in root.rglob("*.java"):
+              s = p.read_text()
+              s = s.replace("world.isClient", "world.isClient()")
+              s = s.replace("world.isClient()()", "world.isClient()")
+              s = s.replace("world.updateNeighborsAlways(pos, state.getBlock());",
+                            "world.updateNeighborsAlways(pos, state.getBlock(), null);")
+              s = s.replace("world.updateNeighborsAlways(pos, this);",
+                            "world.updateNeighborsAlways(pos, this, null);")
+              p.write_text(s)
+          PY
+
+      - name: Update Gradle wrapper to 9.2.0
         working-directory: workspace
-        run: gradle clean build --stacktrace --warning-mode all
+        run: |
+          gradle wrapper --gradle-version 9.2.0 --distribution-type bin
+          chmod +x gradlew
+          ./gradlew --version
+
+      - name: Build Fabric mod with updated gradlew
+        working-directory: workspace
+        run: ./gradlew clean build --stacktrace --warning-mode all --no-daemon
 
       - name: Verify game-ready JAR
         shell: bash

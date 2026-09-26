@@ -1,0 +1,68 @@
+name: Build RothuFlux Game-Ready JAR
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - rothuflux-game-ready-build
+    paths:
+      - 'rothuflux-source/**'
+      - '.github/workflows/rothuflux-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out build branch
+        uses: actions/checkout@v4
+
+      - name: Reconstruct RothuFlux source
+        shell: bash
+        run: |
+          cat rothuflux-source/part-*.b64 | base64 -d > rothuflux-source.tar.xz
+          echo "ba4449a4851f707053eca5c64df7ffe6066fe0c5c71bba7937b5085548052366  rothuflux-source.tar.xz" | sha256sum --check
+          mkdir workspace
+          tar -xJf rothuflux-source.tar.xz -C workspace
+          test -f workspace/build.gradle
+          test -f workspace/src/main/resources/fabric.mod.json
+
+      - name: Install Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.14.3'
+
+      - name: Build Fabric mod
+        working-directory: workspace
+        run: gradle clean build --stacktrace --warning-mode all
+
+      - name: Verify game-ready JAR
+        shell: bash
+        run: |
+          GAME_JAR="$(find workspace/build/libs -maxdepth 1 -type f -name 'rothuflux-surface-redstone-*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' | head -n 1)"
+          test -n "$GAME_JAR"
+          unzip -p "$GAME_JAR" fabric.mod.json | grep -q '"id": "rothuflux"'
+          unzip -l "$GAME_JAR" | grep -q 'com/rothuflux/RothuFluxMod.class'
+          unzip -l "$GAME_JAR" | grep -q 'assets/rothuflux/blockstates/red_alloy_wire.json'
+          unzip -l "$GAME_JAR" | grep -q 'assets/rothuflux/textures/item/red_alloy_pen.png'
+          mkdir -p release
+          cp "$GAME_JAR" release/rothuflux-surface-redstone-1.0.0.jar
+          sha256sum release/rothuflux-surface-redstone-1.0.0.jar > release/SHA256SUMS.txt
+
+      - name: Upload game-ready JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: rothuflux-surface-redstone-1.0.0-game-ready
+          path: release/
+          if-no-files-found: error
+          retention-days: 30

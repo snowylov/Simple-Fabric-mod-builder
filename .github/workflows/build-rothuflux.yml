@@ -38,6 +38,67 @@ jobs:
           test -f workspace/src/main/resources/fabric.mod.json
           echo "Source reconstructed successfully."
 
+      - name: Apply Minecraft 1.21.11 API fixes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path("workspace/src/main/java/com/rothuflux")
+
+          def patch(path, replacements=(), remove_lines=(), add_after=None):
+              p = root / path
+              s = p.read_text()
+              for old, new in replacements:
+                  s = s.replace(old, new)
+              for line in remove_lines:
+                  s = s.replace(line, "")
+              if add_after and add_after[1] not in s:
+                  s = s.replace(add_after[0], add_after[0] + add_after[1])
+              p.write_text(s)
+
+          patch("block/MountedPlateBlock.java",
+              replacements=[
+                  ("import net.minecraft.block.enums.AttachFace;", "import net.minecraft.block.enums.BlockFace;"),
+                  ("AttachFace", "BlockFace"),
+                  ("Properties.ATTACH_FACE", "Properties.BLOCK_FACE"),
+                  ("public static final DirectionProperty FACING = Properties.HORIZONTAL_FACING;",
+                   "public static final EnumProperty<Direction> FACING = Properties.HORIZONTAL_FACING;"),
+              ],
+              remove_lines=["import net.minecraft.state.property.DirectionProperty;\n"])
+
+          patch("block/RedAlloyWireBlock.java",
+              replacements=[
+                  ('public static final DirectionProperty MOUNT = DirectionProperty.of("mount");',
+                   'public static final EnumProperty<Direction> MOUNT = EnumProperty.of("mount", Direction.class);'),
+                  ("if (!world.isClient) {", "if (!world.isClient()) {"),
+                  ("world.updateNeighborsAlways(pos, this);", "world.updateNeighborsAlways(pos, this, null);"),
+              ],
+              remove_lines=["import net.minecraft.state.property.DirectionProperty;\n"],
+              add_after=("import net.minecraft.state.property.IntProperty;\n",
+                         "import net.minecraft.state.property.EnumProperty;\nimport net.minecraft.util.Identifier;\n"))
+
+          for rel in [
+              "block/TimerPlateBlock.java",
+              "block/entity/TimerPlateBlockEntity.java",
+              "block/entity/WirelessEmitterBlockEntity.java",
+              "block/entity/WirelessReceiverBlockEntity.java",
+              "item/RedAlloyPenItem.java",
+              "item/WirelessRedstoneLinkerItem.java",
+          ]:
+              p = root / rel
+              s = p.read_text().replace("world.isClient", "world.isClient()")
+              s = s.replace("world.isClient()()", "world.isClient()")
+              s = s.replace("world.updateNeighborsAlways(pos, state.getBlock());",
+                            "world.updateNeighborsAlways(pos, state.getBlock(), null);")
+              p.write_text(s)
+
+          # Catch any remaining pre-1.21.11 field-style client checks.
+          for p in root.rglob("*.java"):
+              s = p.read_text().replace("world.isClient)","world.isClient())")
+              p.write_text(s)
+          PY
+
       - name: Install Java 21
         uses: actions/setup-java@v4
         with:

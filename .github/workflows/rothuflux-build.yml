@@ -74,6 +74,7 @@ jobs:
           s = s.replace("AttachFace.CEILING", "MountFace.CEILING")
           s = s.replace("AttachFace.WALL", "MountFace.WALL")
           s = s.replace("AttachFace face;", "MountFace face;")
+          s = s.replace("AttachFace face = state.get(FACE);", "MountFace face = state.get(FACE);")
           p.write_text(s)
 
           p = root / "block/RedAlloyWireBlock.java"

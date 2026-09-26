@@ -24,7 +24,9 @@ jobs:
         run: |
           cat redstone-skills-source/part-*.b64 > source.zip.b64
           base64 -d source.zip.b64 > source.zip
-          sha256sum redstone-skills-source/part-*.b64\n          sha256sum source.zip\n          echo "5cdcc99c0113d9a430d979ec6fe37150e65179a494012f88597c63eea4ccc7a2  source.zip" | sha256sum --check
+          sha256sum redstone-skills-source/part-*.b64
+          sha256sum source.zip
+          echo "5cdcc99c0113d9a430d979ec6fe37150e65179a494012f88597c63eea4ccc7a2  source.zip" | sha256sum --check
           mkdir workspace
           unzip -q source.zip -d workspace
           test -f workspace/redstone-skills/build.gradle

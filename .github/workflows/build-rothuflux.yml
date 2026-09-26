@@ -68,3 +68,5 @@ jobs:
           path: release/
           if-no-files-found: error
           retention-days: 30
+
+# Rebuild after all compact source chunks were uploaded.

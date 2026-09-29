@@ -1,0 +1,1 @@
+package com.alex.universalcrowbarapi.api; @FunctionalInterface public interface CrowbarHook { CrowbarActionResult apply(CrowbarContext context, CrowbarActionResult current); }

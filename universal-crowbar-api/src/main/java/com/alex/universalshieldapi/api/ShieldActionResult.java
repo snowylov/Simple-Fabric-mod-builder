@@ -1,0 +1,1 @@
+package com.alex.universalshieldapi.api; public enum ShieldActionResult { PASS, SUCCESS, FAIL }

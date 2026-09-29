@@ -1,0 +1,1 @@
+package com.alex.universaltoolsapi.screwdriver.api; @FunctionalInterface public interface ScrewdriverHook { ScrewdriverActionResult apply(ScrewdriverContext context, ScrewdriverActionResult current); }

@@ -1,19 +1,7 @@
 package com.alex.universalcrowbarapi.api;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-public final class CrowbarApi {
-    private static final List<CrowbarHandler> HANDLERS = new CopyOnWriteArrayList<>();
-    private CrowbarApi() {}
-    public static void register(CrowbarHandler handler) {
-        if (handler == null) throw new IllegalArgumentException("handler cannot be null");
-        HANDLERS.add(handler);
-    }
-    public static boolean unregister(CrowbarHandler handler) { return HANDLERS.remove(handler); }
-    public static CrowbarActionResult invoke(CrowbarContext context) {
-        for (CrowbarHandler handler : HANDLERS) {
-            CrowbarActionResult result = handler.use(context);
-            if (result != CrowbarActionResult.PASS) return result;
-        }
-        return CrowbarActionResult.PASS;
-    }
-}
+import net.minecraft.core.registries.Registries; import net.minecraft.resources.Identifier; import net.minecraft.tags.TagKey; import net.minecraft.world.item.Item; import net.minecraft.world.item.ItemStack; import java.util.*; import java.util.concurrent.*;
+public final class CrowbarApi { public static final TagKey<Item> CROWBARS=TagKey.create(Registries.ITEM,Identifier.fromNamespaceAndPath("universal-crowbar-api","crowbars")); private static final List<CrowbarHandler> HANDLERS=new CopyOnWriteArrayList<>(); private static final Set<Item> ITEMS=ConcurrentHashMap.newKeySet(); private static final Map<CrowbarHookType,List<CrowbarHook>> HOOKS=new EnumMap<>(CrowbarHookType.class); static{for(var t:CrowbarHookType.values())HOOKS.put(t,new CopyOnWriteArrayList<>());} private CrowbarApi(){}
+public static void registerHandler(CrowbarHandler h){HANDLERS.add(Objects.requireNonNull(h));} public static boolean unregisterHandler(CrowbarHandler h){return HANDLERS.remove(h);} public static void register(CrowbarHandler h){registerHandler(h);} public static boolean unregister(CrowbarHandler h){return unregisterHandler(h);}
+public static void registerCrowbar(Item i){ITEMS.add(Objects.requireNonNull(i));} public static boolean unregisterCrowbar(Item i){return ITEMS.remove(i);} public static boolean isCrowbar(ItemStack s){return s.is(CROWBARS)||ITEMS.contains(s.getItem());} public static Set<Item> registeredItems(){return Set.copyOf(ITEMS);}
+public static void registerHook(CrowbarHookType t,CrowbarHook h){HOOKS.get(t).add(Objects.requireNonNull(h));} public static boolean unregisterHook(CrowbarHookType t,CrowbarHook h){return HOOKS.get(t).remove(h);} public static CrowbarActionResult fireHook(CrowbarHookType t,CrowbarContext c,CrowbarActionResult r){for(var h:HOOKS.get(t)){r=h.apply(c,r);if(r==CrowbarActionResult.FAIL)break;}return r;}
+public static CrowbarActionResult invoke(CrowbarContext c){var r=fireHook(CrowbarHookType.BEFORE_HANDLER,c,CrowbarActionResult.PASS);if(r!=CrowbarActionResult.PASS)return r;for(var h:HANDLERS){r=h.use(c);if(r!=CrowbarActionResult.PASS)break;}return fireHook(CrowbarHookType.AFTER_HANDLER,c,r);} }

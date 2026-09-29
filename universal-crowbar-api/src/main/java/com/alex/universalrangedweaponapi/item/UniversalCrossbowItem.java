@@ -1,0 +1,1 @@
+package com.alex.universalrangedweaponapi.item; import com.alex.universalrangedweaponapi.api.UniversalRangedWeaponApi; import net.minecraft.world.item.CrossbowItem; public class UniversalCrossbowItem extends CrossbowItem { public UniversalCrossbowItem(Properties properties){super(properties);UniversalRangedWeaponApi.registerWeapon(this);} }

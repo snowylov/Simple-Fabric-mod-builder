@@ -10,7 +10,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseRailBlock;
-import net.minecraft.world.level.block.RailBlock;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -45,7 +44,7 @@ public final class UniversalCrowbarItem extends Item {
                         : RailShape.NORTH_SOUTH;
 
                 BlockState fourWay = UniversalCrowbarApiMod.FOUR_WAY_RAIL.defaultBlockState()
-                        .setValue(RailBlock.SHAPE, shape);
+                        .setValue(BlockStateProperties.RAIL_SHAPE, shape);
                 if (state.hasProperty(BlockStateProperties.WATERLOGGED)) {
                     fourWay = fourWay.setValue(
                             BlockStateProperties.WATERLOGGED,

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "universal-wrench-api",
+  "version": "${version}",
+  "name": "Universal Wrench API",
+  "description": "Universal Fabric wrench items and an API for block-specific wrench interactions.",
+  "authors": ["Alex"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.alex.universalwrenchapi.UniversalWrenchApiMod"]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {
+    "techreborn": "*"
+  }
+}

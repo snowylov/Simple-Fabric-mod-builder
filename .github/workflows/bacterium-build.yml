@@ -18,11 +18,19 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.2.1'
-      - name: Extract source
+      - name: Extract and patch source
         run: |
           rm -rf bacterium-src
           mkdir bacterium-src
           unzip -q bacterium-source.zip -d bacterium-src
+          sed -i 's/Blocks\.GRASS/Blocks.SHORT_GRASS/g' bacterium-src/src/main/java/com/alex/bacterium/BacteriumMod.java
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path("bacterium-src/src/main/java/com/alex/bacterium/BacteriumBlock.java")
+          s = p.read_text()
+          s = s.replace("        return null;", "        return createCodec(settings -> new BacteriumBlock(mode, settings));")
+          p.write_text(s)
+          PY
       - name: Build
         id: build
         working-directory: bacterium-src

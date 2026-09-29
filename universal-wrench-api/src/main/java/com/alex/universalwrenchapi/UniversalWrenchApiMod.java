@@ -8,7 +8,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -46,7 +46,7 @@ public final class UniversalWrenchApiMod implements ModInitializer {
     }
 
     private static Item registerWrench(String path) {
-        ResourceLocation id = id(path);
+        Identifier id = id(path);
         ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, id);
         Item item = new UniversalWrenchItem(new Item.Properties().stacksTo(1).setId(key));
         Registry.register(BuiltInRegistries.ITEM, key, item);
@@ -55,7 +55,7 @@ public final class UniversalWrenchApiMod implements ModInitializer {
     }
 
     private static void registerTab(String name, List<String> contents, String iconItem) {
-        ResourceLocation id = id(name);
+        Identifier id = id(name);
         ResourceKey<CreativeModeTab> key = ResourceKey.create(BuiltInRegistries.CREATIVE_MODE_TAB.key(), id);
         CreativeModeTab tab = FabricItemGroup.builder()
                 .title(Component.translatable("itemGroup." + MOD_ID + "." + name))
@@ -65,7 +65,7 @@ public final class UniversalWrenchApiMod implements ModInitializer {
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, key, tab);
     }
 
-    public static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MOD_ID, path);
+    public static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
     }
 }

@@ -1,6 +1,5 @@
 package com.alex.universaltoolsapi.screwdriver.api;
 
-import com.alex.universaltoolsapi.UniversalToolsApiMod;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
@@ -15,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public final class ScrewdriverApi {
     public static final TagKey<Item> SCREWDRIVERS = TagKey.create(
             Registries.ITEM,
-            Identifier.fromNamespaceAndPath(UniversalToolsApiMod.MOD_ID, "screwdrivers")
+            Identifier.fromNamespaceAndPath("universal-screwdriver-api", "screwdrivers")
     );
 
     private static final List<ScrewdriverHandler> HANDLERS = new CopyOnWriteArrayList<>();

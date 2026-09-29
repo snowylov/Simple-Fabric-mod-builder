@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "universal-tools-api",
+  "id": "universal-tool-apis",
   "version": "${version}",
-  "name": "Universal Tools API",
-  "description": "Combined crowbar, wrench, screwdriver, material shears, gears, rail and configuration-tool APIs for Fabric 1.21.11.",
+  "name": "Universal Tool APIs",
+  "description": "Combined universal crowbar, wrench, screwdriver and shears APIs for Fabric 1.21.11.",
   "authors": ["Alex"],
   "license": "MIT",
   "environment": "*",
@@ -11,14 +11,14 @@
     "universal-crowbar-api",
     "universal-wrench-api",
     "universal-screwdriver-api",
+    "universal-shears-api",
     "material-shears"
   ],
   "entrypoints": {
     "main": [
-      "com.alex.universaltoolsapi.UniversalToolsApiMod",
       "com.alex.universalcrowbarapi.UniversalCrowbarApiMod",
       "com.alex.universalwrenchapi.UniversalWrenchApiMod",
-      "com.alex.materialshears.MaterialShearsMod"
+      "com.alex.universalshearsapi.UniversalShearsApiMod"
     ]
   },
   "depends": {

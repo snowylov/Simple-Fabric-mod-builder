@@ -1,0 +1,1 @@
+package com.alex.universalrangedweaponapi.api; @FunctionalInterface public interface RangedWeaponHandler { RangedWeaponActionResult handle(RangedWeaponContext context); }

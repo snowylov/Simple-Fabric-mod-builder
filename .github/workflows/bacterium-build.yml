@@ -23,13 +23,21 @@ jobs:
           rm -rf bacterium-src
           mkdir bacterium-src
           unzip -q bacterium-source.zip -d bacterium-src
-          sed -i 's/Blocks\.GRASS/Blocks.SHORT_GRASS/g' bacterium-src/src/main/java/com/alex/bacterium/BacteriumMod.java
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("bacterium-src/src/main/java/com/alex/bacterium/BacteriumBlock.java")
-          s = p.read_text()
-          s = s.replace("        return null;", "        return createCodec(settings -> new BacteriumBlock(mode, settings));")
-          p.write_text(s)
+
+          mod = Path("bacterium-src/src/main/java/com/alex/bacterium/BacteriumMod.java")
+          ms = mod.read_text()
+          ms = ms.replace("Blocks.GRASS ||", "Blocks.SHORT_GRASS ||")
+          mod.write_text(ms)
+
+          block = Path("bacterium-src/src/main/java/com/alex/bacterium/BacteriumBlock.java")
+          bs = block.read_text()
+          bs = bs.replace(
+              "        return null;",
+              "        return createCodec(settings -> new BacteriumBlock(mode, settings));"
+          )
+          block.write_text(bs)
           PY
       - name: Build
         id: build

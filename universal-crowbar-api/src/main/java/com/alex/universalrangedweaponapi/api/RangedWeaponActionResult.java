@@ -1,0 +1,1 @@
+package com.alex.universalrangedweaponapi.api; public enum RangedWeaponActionResult { PASS, SUCCESS, FAIL }

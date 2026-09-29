@@ -1,0 +1,1 @@
+Trigger GitHub Actions build for Shelf Faces 1.0.0.

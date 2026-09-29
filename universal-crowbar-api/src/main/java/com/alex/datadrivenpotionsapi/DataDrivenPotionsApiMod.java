@@ -1,27 +1,10 @@
 package com.alex.datadrivenpotionsapi;
-import com.alex.datadrivenpotionsapi.api.*;
-import com.alex.datadrivenpotionsapi.effect.WeightMobEffect;
-import com.google.gson.*;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.core.Registry;
-import net.minecraft.core.registries.*;
-import net.minecraft.resources.*;
-import net.minecraft.world.effect.MobEffect;
-import java.io.*;import java.nio.file.*;
+import com.alex.datadrivenpotionsapi.api.*;import com.alex.datadrivenpotionsapi.effect.*;import com.google.gson.*;import net.fabricmc.api.ModInitializer;import net.fabricmc.loader.api.FabricLoader;import net.minecraft.core.*;import net.minecraft.core.registries.BuiltInRegistries;import net.minecraft.resources.Identifier;import net.minecraft.world.effect.*;import net.minecraft.world.item.alchemy.Potion;import java.io.*;import java.nio.file.*;import java.util.*;
 public final class DataDrivenPotionsApiMod implements ModInitializer{
- public static final String MOD_ID="data-driven-potions-api";
- public static MobEffect WEIGHT;
- private static final Gson GSON=new Gson();
- public void onInitialize(){
-  Identifier id=Identifier.fromNamespaceAndPath(MOD_ID,"weight");
-  ResourceKey<MobEffect> key=ResourceKey.create(Registries.MOB_EFFECT,id);
-  WEIGHT=Registry.register(BuiltInRegistries.MOB_EFFECT,key,new WeightMobEffect());
-  DataDrivenPotionsApi.registerDefinition(new PotionEffectDefinition(MOD_ID+":weight","weight",0x5A4635,true,3.0));
-  DataDrivenPotionsApi.registerPotion(new DataDrivenPotionDefinition(MOD_ID+":weight_potion",false,java.util.List.of(new DataDrivenPotionDefinition.EffectEntry(MOD_ID+":weight",3600,0))));
-  DataDrivenPotionsApi.registerPotion(new DataDrivenPotionDefinition(MOD_ID+":weight_poison",true,java.util.List.of(new DataDrivenPotionDefinition.EffectEntry(MOD_ID+":weight",1800,1))));
-  load();
- }
+ public static final String MOD_ID="data-driven-potions-api";public static Holder<MobEffect> WEIGHT;public static Holder<Potion> WEIGHT_POTION,WEIGHT_POISON;private static final Gson GSON=new Gson();private static final Map<String,Holder<MobEffect>> EFFECTS=new LinkedHashMap<>();private static final Map<String,Holder<Potion>> POTIONS=new LinkedHashMap<>();
+ public void onInitialize(){WEIGHT=registerEffect(MOD_ID+":weight","weight",0x5A4635,true,3);WEIGHT_POTION=registerPotion(MOD_ID+":weight_potion",false,WEIGHT,3600,0);WEIGHT_POISON=registerPotion(MOD_ID+":weight_poison",true,WEIGHT,1800,1);load();}
+ public static Holder<MobEffect> registerEffect(String raw,String kind,int color,boolean harmful,double scalar){Holder<MobEffect> old=EFFECTS.get(raw);if(old!=null)return old;Identifier id=Identifier.parse(raw);MobEffect effect="weight".equalsIgnoreCase(kind)?new WeightMobEffect():new ConfiguredMobEffect(harmful,color);Holder<MobEffect> h=Registry.registerForHolder(BuiltInRegistries.MOB_EFFECT,id,effect);EFFECTS.put(raw,h);DataDrivenPotionsApi.registerDefinition(new PotionEffectDefinition(raw,kind,color,harmful,scalar));DataDrivenPotionsApi.bindEffect(raw,h);return h;}
+ public static Holder<Potion> registerPotion(String raw,boolean poison,Holder<MobEffect> effect,int duration,int amplifier){Holder<Potion> old=POTIONS.get(raw);if(old!=null)return old;Identifier id=Identifier.parse(raw);Potion p=new Potion(raw,new MobEffectInstance(effect,duration,amplifier));Holder<Potion> h=Registry.registerForHolder(BuiltInRegistries.POTION,id,p);POTIONS.put(raw,h);String effectId=effect.unwrapKey().map(k->k.identifier().toString()).orElse("unknown");DataDrivenPotionsApi.registerPotion(new DataDrivenPotionDefinition(raw,poison,java.util.List.of(new DataDrivenPotionDefinition.EffectEntry(effectId,duration,amplifier))));DataDrivenPotionsApi.bindPotion(raw,h);return h;}
  private static void load(){Path dir=FabricLoader.getInstance().getConfigDir().resolve("universal-tool-apis/potions");try{Files.createDirectories(dir);try(var s=Files.list(dir)){s.filter(p->p.getFileName().toString().endsWith(".json")).forEach(DataDrivenPotionsApiMod::read);}}catch(IOException ignored){}}
- private static void read(Path p){try(Reader r=Files.newBufferedReader(p)){JsonObject j=GSON.fromJson(r,JsonObject.class);String id=j.get("id").getAsString();String kind=j.has("kind")?j.get("kind").getAsString():"generic";int color=j.has("color")?Integer.decode(j.get("color").getAsString()):0x7F7F7F;boolean harmful=j.has("harmful")&&j.get("harmful").getAsBoolean();double scalar=j.has("scalar")?j.get("scalar").getAsDouble():1.0;DataDrivenPotionsApi.registerDefinition(new PotionEffectDefinition(id,kind,color,harmful,scalar));if(j.has("potion")){JsonObject q=j.getAsJsonObject("potion");String pid=q.has("id")?q.get("id").getAsString():id+"_potion";boolean poison=q.has("poison")&&q.get("poison").getAsBoolean();int dur=q.has("duration")?q.get("duration").getAsInt():3600;int amp=q.has("amplifier")?q.get("amplifier").getAsInt():0;DataDrivenPotionsApi.registerPotion(new DataDrivenPotionDefinition(pid,poison,java.util.List.of(new DataDrivenPotionDefinition.EffectEntry(id,dur,amp))));}}catch(Exception ignored){}}
+ private static void read(Path p){try(Reader r=Files.newBufferedReader(p)){JsonObject j=GSON.fromJson(r,JsonObject.class);String id=j.get("id").getAsString(),kind=j.has("kind")?j.get("kind").getAsString():"generic";int color=j.has("color")?Integer.decode(j.get("color").getAsString()):0x7F7F7F;boolean harmful=j.has("harmful")&&j.get("harmful").getAsBoolean();double scalar=j.has("scalar")?j.get("scalar").getAsDouble():1;Holder<MobEffect> effect=registerEffect(id,kind,color,harmful,scalar);if(j.has("potion")){JsonObject q=j.getAsJsonObject("potion");String pid=q.has("id")?q.get("id").getAsString():id+"_potion";boolean poison=q.has("poison")&&q.get("poison").getAsBoolean();int dur=q.has("duration")?q.get("duration").getAsInt():3600,amp=q.has("amplifier")?q.get("amplifier").getAsInt():0;registerPotion(pid,poison,effect,dur,amp);}}catch(Exception ignored){}}
 }

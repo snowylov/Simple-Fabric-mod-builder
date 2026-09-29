@@ -8,6 +8,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.RailBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.RailShape;
 import net.minecraft.world.phys.Vec3;
 
@@ -31,8 +32,12 @@ public final class FourWayRailBlock extends RailBlock {
                 RailShape desired = Math.abs(movement.x) >= Math.abs(movement.z)
                         ? RailShape.EAST_WEST
                         : RailShape.NORTH_SOUTH;
-                if (state.getValue(SHAPE) != desired) {
-                    level.setBlock(pos, state.setValue(SHAPE, desired), 2);
+                if (state.getValue(BlockStateProperties.RAIL_SHAPE) != desired) {
+                    level.setBlock(
+                            pos,
+                            state.setValue(BlockStateProperties.RAIL_SHAPE, desired),
+                            2
+                    );
                 }
             }
         }

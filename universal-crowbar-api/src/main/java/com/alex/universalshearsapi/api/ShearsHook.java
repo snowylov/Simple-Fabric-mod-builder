@@ -1,0 +1,1 @@
+package com.alex.universalshearsapi.api; @FunctionalInterface public interface ShearsHook { ShearsActionResult apply(ShearsContext context, ShearsActionResult current); }

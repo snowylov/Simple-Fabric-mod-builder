@@ -3,7 +3,7 @@
   "id": "universal-tool-apis",
   "version": "${version}",
   "name": "Universal Tool APIs",
-  "description": "Combined universal crowbar, wrench, screwdriver and shears APIs for Fabric 1.21.11.",
+  "description": "Universal crowbar, wrench, screwdriver, shears, shield and ranged-weapon APIs with registration systems and extensible hooks.",
   "authors": ["Alex"],
   "license": "MIT",
   "environment": "*",
@@ -12,13 +12,19 @@
     "universal-wrench-api",
     "universal-screwdriver-api",
     "universal-shears-api",
-    "material-shears"
+    "material-shears",
+    "shield_api",
+    "ranged_weapon_api",
+    "universal-shield-api",
+    "universal-ranged-weapon-api"
   ],
   "entrypoints": {
     "main": [
       "com.alex.universalcrowbarapi.UniversalCrowbarApiMod",
       "com.alex.universalwrenchapi.UniversalWrenchApiMod",
-      "com.alex.universalshearsapi.UniversalShearsApiMod"
+      "com.alex.universalshearsapi.UniversalShearsApiMod",
+      "com.alex.universalshieldapi.UniversalShieldApiMod",
+      "com.alex.universalrangedweaponapi.UniversalRangedWeaponApiMod"
     ]
   },
   "depends": {
@@ -27,7 +33,5 @@
     "java": ">=21",
     "fabric-api": "*"
   },
-  "suggests": {
-    "techreborn": "*"
-  }
+  "suggests": {"techreborn": "*"}
 }

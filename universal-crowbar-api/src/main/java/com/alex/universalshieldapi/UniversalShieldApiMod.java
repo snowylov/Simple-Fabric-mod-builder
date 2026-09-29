@@ -1,0 +1,1 @@
+package com.alex.universalshieldapi; import net.fabricmc.api.ModInitializer; public final class UniversalShieldApiMod implements ModInitializer { public static final String MOD_ID="universal-shield-api"; public void onInitialize(){} }

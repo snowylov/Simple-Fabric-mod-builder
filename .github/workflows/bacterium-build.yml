@@ -42,19 +42,10 @@ jobs:
               "        return null;",
               "        return createCodec(settings -> new BacteriumBlock(mode, settings));"
           )
-          marker = """    @Override
-    protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
-"""
-          neighbor = """    @Override
-    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation orientation, boolean notify) {
-        super.neighborUpdate(state, world, pos, sourceBlock, orientation, notify);
-        if (world instanceof ServerWorld serverWorld) {
-            BacteriumMod.tryActivate(serverWorld, pos, mode);
-        }
-    }
-
-"""
-          bs = bs.replace(marker, neighbor + marker)
+          marker = "    @Override\n    protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {\n"
+          neighbor = "    @Override\n    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation orientation, boolean notify) {\n        super.neighborUpdate(state, world, pos, sourceBlock, orientation, notify);\n        if (world instanceof ServerWorld serverWorld) {\n            BacteriumMod.tryActivate(serverWorld, pos, mode);\n        }\n    }\n\n"
+          if "protected void neighborUpdate" not in bs:
+              bs = bs.replace(marker, neighbor + marker)
           block.write_text(bs)
           PY
       - name: Build

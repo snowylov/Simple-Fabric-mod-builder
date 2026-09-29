@@ -1,0 +1,1 @@
+package com.alex.universalrangedweaponapi.api; import net.minecraft.world.entity.LivingEntity; import net.minecraft.world.item.ItemStack; import net.minecraft.world.level.Level; public record RangedWeaponContext(Level level, LivingEntity user, ItemStack weapon, ItemStack projectile, float charge, boolean crossbow) {}

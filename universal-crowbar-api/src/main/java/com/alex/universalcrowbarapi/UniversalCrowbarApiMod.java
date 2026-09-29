@@ -69,7 +69,7 @@ public final class UniversalCrowbarApiMod implements ModInitializer {
         ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, id);
         FOUR_WAY_RAIL = new FourWayRailBlock(
                 BlockBehaviour.Properties.of()
-                        .noCollission()
+                        .noCollision()
                         .strength(0.7F)
                         .sound(SoundType.METAL)
                         .setId(key)

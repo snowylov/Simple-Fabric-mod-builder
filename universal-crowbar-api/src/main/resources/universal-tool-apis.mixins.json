@@ -1,0 +1,1 @@
+{"required":true,"package":"com.alex","compatibilityLevel":"JAVA_21","mixins":["datadrivenpotionsapi.mixin.WeightFallDamageMixin"],"client":["firguiapi.mixin.AbstractContainerScreenMixin"],"injectors":{"defaultRequire":1}}

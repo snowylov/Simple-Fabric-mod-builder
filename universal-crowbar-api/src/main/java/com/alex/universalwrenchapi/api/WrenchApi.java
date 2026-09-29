@@ -1,32 +1,7 @@
 package com.alex.universalwrenchapi.api;
-
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-public final class WrenchApi {
-    private static final List<WrenchHandler> HANDLERS = new CopyOnWriteArrayList<>();
-
-    private WrenchApi() {
-    }
-
-    public static void register(WrenchHandler handler) {
-        if (handler == null) {
-            throw new IllegalArgumentException("handler cannot be null");
-        }
-        HANDLERS.add(handler);
-    }
-
-    public static boolean unregister(WrenchHandler handler) {
-        return HANDLERS.remove(handler);
-    }
-
-    public static WrenchActionResult invoke(WrenchContext context) {
-        for (WrenchHandler handler : HANDLERS) {
-            WrenchActionResult result = handler.use(context);
-            if (result != WrenchActionResult.PASS) {
-                return result;
-            }
-        }
-        return WrenchActionResult.PASS;
-    }
-}
+import net.minecraft.core.registries.Registries; import net.minecraft.resources.Identifier; import net.minecraft.tags.TagKey; import net.minecraft.world.item.Item; import net.minecraft.world.item.ItemStack; import java.util.*; import java.util.concurrent.*;
+public final class WrenchApi { public static final TagKey<Item> WRENCHES=TagKey.create(Registries.ITEM,Identifier.fromNamespaceAndPath("universal-wrench-api","wrenches")); private static final List<WrenchHandler> HANDLERS=new CopyOnWriteArrayList<>(); private static final Set<Item> ITEMS=ConcurrentHashMap.newKeySet(); private static final Map<WrenchHookType,List<WrenchHook>> HOOKS=new EnumMap<>(WrenchHookType.class); static{for(var t:WrenchHookType.values())HOOKS.put(t,new CopyOnWriteArrayList<>());} private WrenchApi(){}
+public static void registerHandler(WrenchHandler h){HANDLERS.add(Objects.requireNonNull(h));} public static boolean unregisterHandler(WrenchHandler h){return HANDLERS.remove(h);} public static void register(WrenchHandler h){registerHandler(h);} public static boolean unregister(WrenchHandler h){return unregisterHandler(h);}
+public static void registerWrench(Item i){ITEMS.add(Objects.requireNonNull(i));} public static boolean unregisterWrench(Item i){return ITEMS.remove(i);} public static boolean isWrench(ItemStack s){return s.is(WRENCHES)||ITEMS.contains(s.getItem());} public static Set<Item> registeredItems(){return Set.copyOf(ITEMS);}
+public static void registerHook(WrenchHookType t,WrenchHook h){HOOKS.get(t).add(Objects.requireNonNull(h));} public static boolean unregisterHook(WrenchHookType t,WrenchHook h){return HOOKS.get(t).remove(h);} public static WrenchActionResult fireHook(WrenchHookType t,WrenchContext c,WrenchActionResult r){for(var h:HOOKS.get(t)){r=h.apply(c,r);if(r==WrenchActionResult.FAIL)break;}return r;}
+public static WrenchActionResult invoke(WrenchContext c){var r=fireHook(WrenchHookType.BEFORE_HANDLER,c,WrenchActionResult.PASS);if(r!=WrenchActionResult.PASS)return r;for(var h:HANDLERS){r=h.use(c);if(r!=WrenchActionResult.PASS)break;}return fireHook(WrenchHookType.AFTER_HANDLER,c,r);} }

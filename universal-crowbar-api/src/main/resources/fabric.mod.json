@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "universal-crowbar-api",
+  "version": "${version}",
+  "name": "Universal Crowbar API",
+  "description": "Universal Fabric crowbars plus an API for vanilla and modded block crowbar actions.",
+  "authors": ["Alex"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {"main": ["com.alex.universalcrowbarapi.UniversalCrowbarApiMod"]},
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  },
+  "suggests": {"techreborn": "*"}
+}

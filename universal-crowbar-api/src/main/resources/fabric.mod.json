@@ -6,7 +6,10 @@
  "description":"Universal tool, potion, item-attribute and ultra-lightweight GUI APIs for Fabric 1.21.11.",
  "authors":["Alex"],"license":"MIT","environment":"*",
  "provides":["universal-crowbar-api","universal-wrench-api","universal-screwdriver-api","universal-shears-api","material-shears","shield_api","ranged_weapon_api","universal-shield-api","universal-ranged-weapon-api","data-driven-potions-api","data-driven-item-attributes-api","data-driven-item_attributes-api","fir-gui-api"],
- "entrypoints":{"main":["com.alex.universalcrowbarapi.UniversalCrowbarApiMod","com.alex.universalwrenchapi.UniversalWrenchApiMod","com.alex.universalshearsapi.UniversalShearsApiMod","com.alex.universalshieldapi.UniversalShieldApiMod","com.alex.universalrangedweaponapi.UniversalRangedWeaponApiMod","com.alex.datadrivenpotionsapi.DataDrivenPotionsApiMod","com.alex.datadrivenitemattributesapi.DataDrivenItemAttributesApiMod","com.alex.firguiapi.FirGuiApiMod"]},
+ "entrypoints":{
+  "main":["com.alex.universalcrowbarapi.UniversalCrowbarApiMod","com.alex.universalwrenchapi.UniversalWrenchApiMod","com.alex.universalshearsapi.UniversalShearsApiMod","com.alex.universalshieldapi.UniversalShieldApiMod","com.alex.universalrangedweaponapi.UniversalRangedWeaponApiMod","com.alex.datadrivenpotionsapi.DataDrivenPotionsApiMod","com.alex.datadrivenitemattributesapi.DataDrivenItemAttributesApiMod","com.alex.firguiapi.FirGuiApiMod"],
+  "modmenu":["com.alex.firguiapi.client.FirGuiModMenuIntegration"]
+ },
  "mixins":["universal-tool-apis.mixins.json"],
  "depends":{"fabricloader":">=0.18.0","minecraft":"~1.21.11","java":">=21","fabric-api":"*"},
  "suggests":{"techreborn":"*","modmenu":"*"}

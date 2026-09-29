@@ -1,0 +1,1 @@
+package com.alex.universalshieldapi.item; import com.alex.universalshieldapi.api.UniversalShieldApi; import net.minecraft.world.item.ShieldItem; public class UniversalShieldItem extends ShieldItem { public UniversalShieldItem(Properties properties){super(properties);UniversalShieldApi.registerShield(this);} }

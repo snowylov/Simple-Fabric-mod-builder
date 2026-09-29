@@ -1,62 +1,6 @@
 package com.alex.universalshearsapi.api;
-
-import com.alex.universalshearsapi.UniversalShearsApiMod;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
-import net.minecraft.tags.TagKey;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-public final class UniversalShearsApi {
-    public static final TagKey<Item> SHEARS = TagKey.create(
-            Registries.ITEM,
-            Identifier.fromNamespaceAndPath(UniversalShearsApiMod.MOD_ID, "shears")
-    );
-
-    private static final List<ShearsHandler> HANDLERS = new CopyOnWriteArrayList<>();
-    private static final Set<Item> REGISTERED_SHEARS = ConcurrentHashMap.newKeySet();
-
-    private UniversalShearsApi() {
-    }
-
-    public static void registerHandler(ShearsHandler handler) {
-        if (handler == null) {
-            throw new IllegalArgumentException("handler cannot be null");
-        }
-        HANDLERS.add(handler);
-    }
-
-    public static boolean unregisterHandler(ShearsHandler handler) {
-        return HANDLERS.remove(handler);
-    }
-
-    public static void registerShears(Item item) {
-        if (item == null) {
-            throw new IllegalArgumentException("item cannot be null");
-        }
-        REGISTERED_SHEARS.add(item);
-    }
-
-    public static boolean unregisterShears(Item item) {
-        return REGISTERED_SHEARS.remove(item);
-    }
-
-    public static boolean isShears(ItemStack stack) {
-        return stack.is(SHEARS) || REGISTERED_SHEARS.contains(stack.getItem());
-    }
-
-    public static ShearsActionResult invoke(ShearsContext context) {
-        for (ShearsHandler handler : HANDLERS) {
-            ShearsActionResult result = handler.use(context);
-            if (result != ShearsActionResult.PASS) {
-                return result;
-            }
-        }
-        return ShearsActionResult.PASS;
-    }
-}
+import com.alex.universalshearsapi.UniversalShearsApiMod; import net.minecraft.core.registries.Registries; import net.minecraft.resources.Identifier; import net.minecraft.tags.TagKey; import net.minecraft.world.item.Item; import net.minecraft.world.item.ItemStack; import java.util.*; import java.util.concurrent.*;
+public final class UniversalShearsApi { public static final TagKey<Item> SHEARS=TagKey.create(Registries.ITEM,Identifier.fromNamespaceAndPath(UniversalShearsApiMod.MOD_ID,"shears")); private static final List<ShearsHandler> HANDLERS=new CopyOnWriteArrayList<>(); private static final Set<Item> ITEMS=ConcurrentHashMap.newKeySet(); private static final Map<ShearsHookType,List<ShearsHook>> HOOKS=new EnumMap<>(ShearsHookType.class); static{for(var t:ShearsHookType.values())HOOKS.put(t,new CopyOnWriteArrayList<>());} private UniversalShearsApi(){}
+public static void registerHandler(ShearsHandler h){HANDLERS.add(Objects.requireNonNull(h));} public static boolean unregisterHandler(ShearsHandler h){return HANDLERS.remove(h);} public static void registerShears(Item i){ITEMS.add(Objects.requireNonNull(i));} public static boolean unregisterShears(Item i){return ITEMS.remove(i);} public static boolean isShears(ItemStack s){return s.is(SHEARS)||ITEMS.contains(s.getItem());} public static Set<Item> registeredItems(){return Set.copyOf(ITEMS);}
+public static void registerHook(ShearsHookType t,ShearsHook h){HOOKS.get(t).add(Objects.requireNonNull(h));} public static boolean unregisterHook(ShearsHookType t,ShearsHook h){return HOOKS.get(t).remove(h);} public static ShearsActionResult fireHook(ShearsHookType t,ShearsContext c,ShearsActionResult r){for(var h:HOOKS.get(t)){r=h.apply(c,r);if(r==ShearsActionResult.FAIL)break;}return r;}
+public static ShearsActionResult invoke(ShearsContext c){var r=fireHook(ShearsHookType.BEFORE_HANDLER,c,ShearsActionResult.PASS);if(r!=ShearsActionResult.PASS)return r;for(var h:HANDLERS){r=h.use(c);if(r!=ShearsActionResult.PASS)break;}return fireHook(ShearsHookType.AFTER_HANDLER,c,r);} }

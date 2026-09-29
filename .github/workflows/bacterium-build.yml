@@ -29,14 +29,32 @@ jobs:
           mod = Path("bacterium-src/src/main/java/com/alex/bacterium/BacteriumMod.java")
           ms = mod.read_text()
           ms = ms.replace("Blocks.GRASS ||", "Blocks.SHORT_GRASS ||")
+          ms = ms.replace("if (!current.equals(target))", "if (current.getBlock() != target.getBlock())")
           mod.write_text(ms)
 
           block = Path("bacterium-src/src/main/java/com/alex/bacterium/BacteriumBlock.java")
           bs = block.read_text()
           bs = bs.replace(
+              "import net.minecraft.world.World;\n",
+              "import net.minecraft.world.World;\nimport net.minecraft.world.block.WireOrientation;\n"
+          )
+          bs = bs.replace(
               "        return null;",
               "        return createCodec(settings -> new BacteriumBlock(mode, settings));"
           )
+          marker = """    @Override
+    protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+"""
+          neighbor = """    @Override
+    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, @Nullable WireOrientation orientation, boolean notify) {
+        super.neighborUpdate(state, world, pos, sourceBlock, orientation, notify);
+        if (world instanceof ServerWorld serverWorld) {
+            BacteriumMod.tryActivate(serverWorld, pos, mode);
+        }
+    }
+
+"""
+          bs = bs.replace(marker, neighbor + marker)
           block.write_text(bs)
           PY
       - name: Build

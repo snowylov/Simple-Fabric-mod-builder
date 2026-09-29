@@ -19,7 +19,7 @@ jobs:
           java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.14.3'
+          gradle-version: '9.4.0'
       - name: Build
         run: gradle clean build --stacktrace
       - name: Collect artifacts

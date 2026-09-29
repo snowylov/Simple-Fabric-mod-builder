@@ -5,4 +5,4 @@ pluginManagement {
         mavenCentral()
     }
 }
-rootProject.name = 'universal-tools-api'
+rootProject.name = 'universal-tool-apis'

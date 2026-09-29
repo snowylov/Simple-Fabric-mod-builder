@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "shelffaces",
+  "version": "${version}",
+  "name": "Shelf Faces",
+  "description": "Per-face toggleable shelves with resource-pack/mod supplied overlays.",
+  "authors": ["Alex"],
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.alex.shelffaces.ShelfFacesMod"],
+    "client": ["com.alex.shelffaces.client.ShelfFacesClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

@@ -1,0 +1,1 @@
+package com.alex.universalwrenchapi.api; @FunctionalInterface public interface WrenchHook { WrenchActionResult apply(WrenchContext context, WrenchActionResult current); }

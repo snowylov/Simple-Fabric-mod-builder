@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "material-shears",
+  "version": "${version}",
+  "name": "Material Shears",
+  "description": "Adds shears for multiple tool materials, with durability matching each material tier.",
+  "authors": ["Alex"],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {"main": ["com.alex.materialshears.MaterialShearsMod"]},
+  "depends": {
+    "fabricloader": ">=0.18.0",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

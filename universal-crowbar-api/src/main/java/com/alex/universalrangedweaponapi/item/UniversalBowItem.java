@@ -1,0 +1,1 @@
+package com.alex.universalrangedweaponapi.item; import com.alex.universalrangedweaponapi.api.UniversalRangedWeaponApi; import net.minecraft.world.item.BowItem; public class UniversalBowItem extends BowItem { public UniversalBowItem(Properties properties){super(properties);UniversalRangedWeaponApi.registerWeapon(this);} }

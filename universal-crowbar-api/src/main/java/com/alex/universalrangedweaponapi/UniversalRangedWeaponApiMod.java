@@ -1,0 +1,1 @@
+package com.alex.universalrangedweaponapi; import net.fabricmc.api.ModInitializer; public final class UniversalRangedWeaponApiMod implements ModInitializer { public static final String MOD_ID="universal-ranged-weapon-api"; public void onInitialize(){} }

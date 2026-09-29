@@ -1,0 +1,1 @@
+package com.alex.universalshieldapi.api; @FunctionalInterface public interface ShieldHook { ShieldActionResult apply(ShieldContext context, ShieldActionResult current); }

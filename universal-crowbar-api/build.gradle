@@ -45,6 +45,8 @@ tasks.register('apiJar', Jar) {
     include 'com/alex/universalwrenchapi/api/**'
     include 'com/alex/universaltoolsapi/screwdriver/api/**'
     include 'com/alex/universaltoolsapi/screwdriver/item/**'
+    include 'com/alex/universalshearsapi/api/**'
+    include 'com/alex/universalshearsapi/item/**'
 }
 
 tasks.named('build') {

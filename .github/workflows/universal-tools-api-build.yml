@@ -1,0 +1,30 @@
+name: Universal Tools API Build
+on:
+  push:
+    branches: [ universal-tools-api ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: universal-crowbar-api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.0'
+      - name: Build
+        run: gradle clean build --stacktrace
+      - name: Collect artifacts
+        run: |
+          mkdir -p release
+          cp build/libs/universal-tools-api-*.jar release/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: universal-tools-api-build
+          path: universal-crowbar-api/release/*

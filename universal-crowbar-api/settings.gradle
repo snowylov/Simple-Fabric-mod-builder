@@ -5,4 +5,4 @@ pluginManagement {
         mavenCentral()
     }
 }
-rootProject.name = 'universal-crowbar-api'
+rootProject.name = 'universal-tools-api'

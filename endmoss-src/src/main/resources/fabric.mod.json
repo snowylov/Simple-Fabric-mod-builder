@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "bacterium",
+  "version": "${version}",
+  "name": "Bacterium",
+  "description": "World-transforming bacterium blocks plus End Moss Gardens in the outer End.",
+  "authors": ["Alex"],
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.alex.bacterium.BacteriumMod"],
+    "client": ["com.alex.bacterium.BacteriumClient"]
+  },
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "~1.21.11",
+    "java": ">=21",
+    "fabric-api": "*",
+    "terrablender": ">=21.11.0.0"
+  }
+}

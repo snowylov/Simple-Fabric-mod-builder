@@ -2,6 +2,7 @@ package com.alex.shelffaces;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
@@ -57,7 +58,10 @@ public final class ShelfFacesMod implements ModInitializer {
             SHELVES.put(wood, block);
 
             RegistryKey<Item> itemKey = RegistryKey.of(RegistryKeys.ITEM, id);
-            BlockItem blockItem = new BlockItem(block, new Item.Settings().registryKey(itemKey).useBlockPrefixedTranslationKey());
+            BlockItem blockItem = new BlockItem(
+                    block,
+                    new Item.Settings().registryKey(itemKey).useBlockPrefixedTranslationKey()
+            );
             Registry.register(Registries.ITEM, id, blockItem);
         }
 
@@ -74,7 +78,10 @@ public final class ShelfFacesMod implements ModInitializer {
         SHELF_BLOCK_ENTITY = Registry.register(
                 Registries.BLOCK_ENTITY_TYPE,
                 id("shelf"),
-                BlockEntityType.Builder.create(FaceShelfBlockEntity::new, SHELVES.values().toArray(Block[]::new)).build(null)
+                FabricBlockEntityTypeBuilder.create(
+                        FaceShelfBlockEntity::new,
+                        SHELVES.values().toArray(Block[]::new)
+                ).build()
         );
     }
 }

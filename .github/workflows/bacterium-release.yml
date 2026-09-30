@@ -1,0 +1,52 @@
+name: Publish Bacterium 1.2.0
+
+on:
+  push:
+    branches: [ build/bacterium-1.2.0 ]
+    paths:
+      - ".github/workflows/bacterium-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.2.1'
+      - name: Extract source
+        run: |
+          rm -rf bacterium-src
+          mkdir bacterium-src
+          unzip -q bacterium-1.2.0-source.zip -d bacterium-src
+      - name: Build Bacterium
+        working-directory: bacterium-src
+        run: gradle clean build --stacktrace
+      - name: Prepare game-ready JAR
+        working-directory: bacterium-src
+        run: |
+          mkdir -p release
+          MAIN_JAR="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' ! -name '*-api.jar' | head -1)"
+          test -n "$MAIN_JAR"
+          cp "$MAIN_JAR" release/bacterium-1.2.0-game-ready.jar
+          unzip -t release/bacterium-1.2.0-game-ready.jar >/dev/null
+      - name: Publish GitHub Release
+        working-directory: bacterium-src
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view bacterium-v1.2.0 >/dev/null 2>&1; then
+            gh release upload bacterium-v1.2.0 release/bacterium-1.2.0-game-ready.jar --clobber
+          else
+            gh release create bacterium-v1.2.0 release/bacterium-1.2.0-game-ready.jar \
+              --title "Bacterium 1.2.0" \
+              --notes "Standalone Fabric 1.21.11 Bacterium game-ready JAR."
+          fi

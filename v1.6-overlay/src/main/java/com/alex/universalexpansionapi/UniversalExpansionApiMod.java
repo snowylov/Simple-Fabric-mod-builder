@@ -7,5 +7,6 @@ public final class UniversalExpansionApiMod implements ModInitializer {
     @Override
     public void onInitialize() {
         UniversalChestTemplateApi.bootstrapDefaults();
+        UniversalExpansionCommands.register();
     }
 }

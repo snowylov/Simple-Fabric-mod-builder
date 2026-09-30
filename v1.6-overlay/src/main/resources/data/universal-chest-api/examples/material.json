@@ -1,0 +1,5 @@
+{
+  "id": "mymod:poplar",
+  "kind": "WOOD",
+  "texture": "mymod:block/poplar_planks"
+}

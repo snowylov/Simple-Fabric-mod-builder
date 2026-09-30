@@ -1,0 +1,36 @@
+name: Publish Bacterium Standalone
+
+on:
+  push:
+    branches: [ standalone-shelf-bacterium-releases ]
+    paths:
+      - ".github/workflows/publish-bacterium-standalone.yml"
+      - "release-inputs/bacterium.00"
+      - "release-inputs/bacterium.01"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct game-ready Bacterium JAR
+        run: |
+          mkdir -p release
+          cat release-inputs/bacterium.00 release-inputs/bacterium.01 | tr -cd 'A-Za-z0-9+/=' | base64 -d > release/bacterium-1.0.0-game-ready.jar
+          unzip -t release/bacterium-1.0.0-game-ready.jar >/dev/null
+          ls -lh release/bacterium-1.0.0-game-ready.jar
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view bacterium-v1.0.0 >/dev/null 2>&1; then
+            gh release upload bacterium-v1.0.0 release/bacterium-1.0.0-game-ready.jar --clobber
+          else
+            gh release create bacterium-v1.0.0 release/bacterium-1.0.0-game-ready.jar \
+              --title "Bacterium 1.0.0" \
+              --notes "Standalone Fabric 1.21.11 Bacterium game-ready JAR."
+          fi

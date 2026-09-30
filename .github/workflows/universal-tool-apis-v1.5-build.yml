@@ -1,0 +1,71 @@
+name: Universal Tool APIs 1.5 Build
+
+on:
+  push:
+    branches: [ universal-tool-apis-v1.5 ]
+    paths:
+      - ".github/workflows/universal-tool-apis-v1.5-build.yml"
+      - "uta150_patch.b64"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: universal-crowbar-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply Universal Tool APIs 1.4 source archive
+        working-directory: .
+        run: |
+          rm -rf /tmp/uta150-source
+          mkdir -p /tmp/uta150-source
+          cp source-parts/source.part-000 /tmp/source-1.4.0.zip
+          unzip -q -o /tmp/source-1.4.0.zip -d /tmp/uta150-source
+          if [ -f /tmp/uta150-source/build.gradle ]; then
+            SOURCE_ROOT=/tmp/uta150-source
+          else
+            SOURCE_ROOT="$(find /tmp/uta150-source -mindepth 1 -maxdepth 2 -type f -name build.gradle -printf '%h\n' | head -1)"
+          fi
+          test -n "$SOURCE_ROOT"
+          rm -rf universal-crowbar-api
+          mkdir -p universal-crowbar-api
+          cp -a "$SOURCE_ROOT"/. universal-crowbar-api/
+
+      - name: Apply Fir GUI 1.5 patch
+        working-directory: .
+        run: |
+          tr -cd 'A-Za-z0-9+/=' < uta150_patch.b64 | base64 -d > /tmp/uta150_patch.tar.gz
+          tar -xzf /tmp/uta150_patch.tar.gz -C universal-crowbar-api
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.0'
+
+      - name: Build
+        run: gradle clean build --stacktrace
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p release
+          cp build/libs/universal-tool-apis-1.5.0.jar release/universal-tool-apis-1.5.0-game-ready.jar
+          cp build/libs/universal-tool-apis-1.5.0-deobf.jar release/universal-tool-apis-1.5.0-deobf.jar
+          cp build/libs/universal-tool-apis-1.5.0-api.jar release/universal-tool-apis-1.5.0-api.jar
+          cp build/libs/universal-tool-apis-1.5.0-sources.jar release/universal-tool-apis-1.5.0-sources.jar
+          for f in release/*.jar; do unzip -t "$f" >/dev/null; done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: universal-tool-apis-1.5.0
+          path: universal-crowbar-api/release/*.jar

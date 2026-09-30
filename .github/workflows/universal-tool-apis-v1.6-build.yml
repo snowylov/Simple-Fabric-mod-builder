@@ -5,7 +5,8 @@ on:
     branches: [ universal-tool-apis-v1.6 ]
     paths:
       - ".github/workflows/universal-tool-apis-v1.6-build.yml"
-      - "v1.6-overlay/**"\n      - "uta150_patch.b64"
+      - "v1.6-overlay/**"
+      - "uta150_patch.b64"
   workflow_dispatch:
 
 permissions:

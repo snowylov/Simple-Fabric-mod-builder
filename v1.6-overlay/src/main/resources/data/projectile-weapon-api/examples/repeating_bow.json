@@ -1,0 +1,8 @@
+{
+  "charge_ticks": 20,
+  "repeat_delay_ticks": 20,
+  "base_damage": 10.0,
+  "arrow_overlay_texture": "minecraft:item/arrow",
+  "overlay_rotation": "LEFT_90",
+  "require_full_charge": true
+}

@@ -1,0 +1,10 @@
+{
+  "type": "ITEM",
+  "tag": "c:tools/wrench",
+  "add": [
+    "mymod:titanium_wrench"
+  ],
+  "remove": [
+    "othermod:broken_wrench"
+  ]
+}

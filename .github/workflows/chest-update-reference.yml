@@ -1,0 +1,55 @@
+name: Chest Update development reference
+on:
+  push:
+    branches: [Universal-tool-api-2.5.5]
+    paths: [.github/workflows/chest-update-reference.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - uses: gradle/actions/setup-gradle@v4
+        with: {gradle-version: '9.4.0'}
+      - name: Reconstruct actual released 1.5 source path
+        run: |
+          set -euo pipefail
+          mkdir -p reference/source reference/artifacts/compile-classpath
+          cp -a universal-crowbar-api/. reference/source/
+          python3 - <<'PY'
+          import base64,tarfile,pathlib,io
+          for name in ['uta130_patch.b64','uta150_patch.b64']:
+              data=base64.b64decode(''.join(pathlib.Path(name).read_text().split()),validate=True)
+              with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as t:t.extractall('reference/source',filter='data')
+          PY
+          cp -a reference/source reference/artifacts/named-source
+          cat >> reference/source/build.gradle <<'EOF'
+          tasks.register('exportCompileClasspath', Copy) {
+              from configurations.compileClasspath
+              into '../artifacts/compile-classpath'
+          }
+          EOF
+      - name: Resolve and build reference
+        working-directory: reference/source
+        run: gradle exportCompileClasspath build --stacktrace > ../artifacts/build.log 2>&1
+        continue-on-error: true
+      - name: Capture runtime references and original release JARs
+        if: always()
+        env: {GH_TOKEN: '${{ github.token }}'}
+        run: |
+          set -euo pipefail
+          find reference/source/build/libs -name '*.jar' -type f -exec cp {} reference/artifacts/ \; 2>/dev/null || true
+          gh release download v1.4.0 --pattern '*game-ready.jar' --dir reference/artifacts/
+          gh release download v1.5.0 --pattern '*game-ready.jar' --dir reference/artifacts/
+          find ~/.gradle/caches -type f -name '*.tiny' -exec cp {} reference/artifacts/ \; || true
+          du -sh reference/artifacts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chest-update-development-reference
+          path: reference/artifacts/
+          retention-days: 7

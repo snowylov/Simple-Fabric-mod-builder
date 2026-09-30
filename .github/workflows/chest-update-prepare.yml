@@ -1,0 +1,55 @@
+name: Chest Update source audit
+on:
+  push:
+    branches: [Universal-tool-api-2.5.5]
+    paths: [.github/workflows/chest-update-prepare.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.0'
+      - name: Reconstruct full 1.4 plus uploaded 1.5 API improvements
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p audit/base audit/work audit/artifacts
+          unzip -q source-parts/source.part-000 -d audit/base
+          cp -a audit/base/. audit/work/
+          python3 - <<'PY'
+          import base64,tarfile,pathlib,io
+          raw=pathlib.Path('uta150_patch.b64').read_text()
+          data=base64.b64decode(''.join(raw.split()),validate=True)
+          with tarfile.open(fileobj=io.BytesIO(data),mode='r:gz') as t:
+              t.extractall('audit/work',filter='data')
+          PY
+          cp -a audit/work audit/artifacts/named-source
+          curl -fL --retry 3 'https://maven.fabricmc.net/net/fabricmc/yarn/1.21.11+build.6/yarn-1.21.11+build.6-v2.jar' -o audit/artifacts/yarn-mappings.jar
+          curl -fL --retry 3 'https://repo.maven.apache.org/maven2/com/google/code/gson/gson/2.11.0/gson-2.11.0.jar' -o audit/artifacts/gson.jar
+          curl -fL --retry 3 'https://www.benf.org/other/cfr/cfr-0.152.jar' -o audit/artifacts/cfr.jar
+          find audit/work -maxdepth 3 -name build.gradle -print
+      - name: Compile inherited API to expose baseline failures
+        working-directory: audit/work
+        run: gradle build --stacktrace > ../artifacts/baseline-build.log 2>&1
+        continue-on-error: true
+      - name: Export audit sources and any compiled artifacts
+        if: always()
+        shell: bash
+        run: |
+          find audit/work/build -name '*.jar' -type f -exec cp {} audit/artifacts/ \; 2>/dev/null || true
+          find ~/.gradle/caches -type f \( -name '*merged*named*.jar' -o -name '*merged*mapped*.jar' -o -name 'mappings.tiny' \) -print > audit/artifacts/cache-paths.txt || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chest-update-baseline-audit
+          path: audit/artifacts/
+          retention-days: 7

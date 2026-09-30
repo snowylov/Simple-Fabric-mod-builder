@@ -63,10 +63,17 @@ jobs:
       - name: Prepare release assets
         run: |
           mkdir -p release
-          cp build/libs/universal-tool-apis-1.4.0.jar release/universal-tool-apis-1.4.0-game-ready.jar
-          cp build/libs/universal-tool-apis-1.4.0-deobf.jar release/universal-tool-apis-1.4.0-deobf.jar
-          cp build/libs/universal-tool-apis-1.4.0-api.jar release/universal-tool-apis-1.4.0-api.jar
-          cp build/libs/universal-tool-apis-1.4.0-sources.jar release/universal-tool-apis-1.4.0-sources.jar
+          echo "Built files:"
+          ls -la build/libs
+          MAIN_JAR="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-api.jar' ! -name '*-deobf.jar' | head -1)"
+          DEOBF_JAR="$(find build/libs -maxdepth 1 -type f -name '*-deobf.jar' | head -1)"
+          API_JAR="$(find build/libs -maxdepth 1 -type f -name '*-api.jar' | head -1)"
+          SOURCES_JAR="$(find build/libs -maxdepth 1 -type f -name '*-sources.jar' | head -1)"
+          test -n "$MAIN_JAR" && test -n "$DEOBF_JAR" && test -n "$API_JAR" && test -n "$SOURCES_JAR"
+          cp "$MAIN_JAR" release/universal-tool-apis-1.4.0-game-ready.jar
+          cp "$DEOBF_JAR" release/universal-tool-apis-1.4.0-deobf.jar
+          cp "$API_JAR" release/universal-tool-apis-1.4.0-api.jar
+          cp "$SOURCES_JAR" release/universal-tool-apis-1.4.0-sources.jar
           for f in release/*.jar; do unzip -t "$f" >/dev/null; done
 
       - uses: actions/upload-artifact@v4

@@ -1,0 +1,7 @@
+{
+  "id": "mymod:classic_wand",
+  "focus_slots": 1,
+  "focus_required": true,
+  "open_focus_gui_on_shift_right_click": true,
+  "focus_tag": "classic-wand-api:wand_focus"
+}

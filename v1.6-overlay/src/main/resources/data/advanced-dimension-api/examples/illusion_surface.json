@@ -1,0 +1,8 @@
+{
+  "id": "mymod:fake_room_surface",
+  "texture": "mymod:textures/block/fake_room_surface.png",
+  "viewed_scene": "mymod:rooms/laboratory",
+  "parallax_depth": 8.0,
+  "animated": true,
+  "render_entities": false
+}

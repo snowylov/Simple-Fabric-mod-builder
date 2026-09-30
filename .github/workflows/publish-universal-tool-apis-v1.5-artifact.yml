@@ -1,0 +1,37 @@
+name: Publish Universal Tool APIs 1.5.0 Artifact
+
+on:
+  push:
+    branches: [ universal-tool-apis-v1.5 ]
+    paths:
+      - ".github/workflows/publish-universal-tool-apis-v1.5-artifact.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download known-good 1.5.0 build artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p release
+          gh run download 36650012936 -n universal-tool-apis-1.5.0 -D release
+          ls -la release
+          for f in release/*.jar; do unzip -t "$f" >/dev/null; done
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.5.0 >/dev/null 2>&1; then
+            gh release upload v1.5.0 release/*.jar --clobber
+          else
+            gh release create v1.5.0 release/*.jar \
+              --title "Universal Tool APIs 1.5.0" \
+              --notes "Fabric 1.21.11 / Java 21. Fir-GUI-API adds broad vanilla/modded container styling, cached render plans, versioned dynamic caching, data-driven Fir GUI JSON loading, and safe block-entity optimization helpers."
+          fi

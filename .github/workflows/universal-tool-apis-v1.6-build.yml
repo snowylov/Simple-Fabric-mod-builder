@@ -1,0 +1,132 @@
+name: Universal Tool APIs 1.6 Build
+
+on:
+  push:
+    branches: [ universal-tool-apis-v1.6 ]
+    paths:
+      - ".github/workflows/universal-tool-apis-v1.6-build.yml"
+      - "v1.6-overlay/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: universal-crowbar-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore Universal Tool APIs 1.4 source
+        working-directory: .
+        run: |
+          rm -rf /tmp/uta160-base
+          mkdir -p /tmp/uta160-base
+          cp source-parts/source.part-000 /tmp/source-1.4.0.zip
+          unzip -t /tmp/source-1.4.0.zip
+          unzip -q -o /tmp/source-1.4.0.zip -d /tmp/uta160-base
+          if [ -f /tmp/uta160-base/build.gradle ]; then
+            SOURCE_ROOT=/tmp/uta160-base
+          else
+            SOURCE_ROOT="$(find /tmp/uta160-base -mindepth 1 -maxdepth 2 -type f -name build.gradle -printf '%h\n' | head -1)"
+          fi
+          test -n "$SOURCE_ROOT"
+          rm -rf universal-crowbar-api
+          mkdir -p universal-crowbar-api
+          cp -a "$SOURCE_ROOT"/. universal-crowbar-api/
+
+      - name: Apply Universal Tool APIs 1.5 source patch
+        working-directory: .
+        run: |
+          tr -cd 'A-Za-z0-9+/=' < uta150_patch.b64 | base64 -d > /tmp/uta150_patch.tar.gz
+          tar -xzf /tmp/uta150_patch.tar.gz -C universal-crowbar-api
+          if [ -f universal-crowbar-api/src/main/java/com/alex/universalelytraapi/api/ElytraFallContext.java ]; then
+            sed -i 's/        float fallDistance,/        double fallDistance,/' universal-crowbar-api/src/main/java/com/alex/universalelytraapi/api/ElytraFallContext.java || true
+          fi
+
+      - name: Apply Universal Tool APIs 1.6 overlay
+        working-directory: .
+        run: |
+          cp -a v1.6-overlay/. universal-crowbar-api/
+          sed -i 's/^mod_version=.*/mod_version=1.6.0/' universal-crowbar-api/gradle.properties
+
+          cat >> universal-crowbar-api/build.gradle <<'GRADLE'
+
+          tasks.named('apiJar', Jar) {
+              include 'com/alex/minecraftbrickyardapi/api/**'
+              include 'com/alex/projectileweaponapi/api/**'
+              include 'com/alex/classicwandapi/api/**'
+              include 'com/alex/advanceddimensionapi/api/**'
+              include 'com/alex/universalportalapi/api/**'
+              include 'com/alex/universaltagapi/api/**'
+              include 'com/alex/universalchestapi/api/**'
+              include 'com/alex/universalexpansionapi/data/**'
+          }
+          GRADLE
+
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("universal-crowbar-api/src/main/resources/fabric.mod.json")
+          data = json.loads(path.read_text())
+
+          provides = list(data.get("provides", []))
+          for api_id in [
+              "minecraft-brickyard-api",
+              "projectile-weapon-api",
+              "classic-wand-api",
+              "advanced-dimension-api",
+              "universal-portal-api",
+              "universal-tag-api"
+          ]:
+              if api_id not in provides:
+                  provides.append(api_id)
+          data["provides"] = provides
+
+          entrypoints = data.setdefault("entrypoints", {})
+          main = list(entrypoints.get("main", []))
+          cls = "com.alex.universalexpansionapi.UniversalExpansionApiMod"
+          if cls not in main:
+              main.append(cls)
+          entrypoints["main"] = main
+
+          data["description"] = (
+              "Universal Tool APIs for Fabric 1.21.11, including tool, GUI, fluid, chest, "
+              "brick-family, projectile-weapon, wand-focus, dimension visual, portal and tag APIs."
+          )
+          path.write_text(json.dumps(data, indent=2) + "\n")
+          PY
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.0'
+
+      - name: Build and verify
+        run: gradle clean build --stacktrace
+
+      - name: Verify expected 1.6 APIs are in the JAR
+        run: |
+          MAIN_JAR="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-api.jar' ! -name '*-deobf.jar' | head -1)"
+          test -n "$MAIN_JAR"
+          jar tf "$MAIN_JAR" | grep 'com/alex/minecraftbrickyardapi/api/MinecraftBrickyardApi'
+          jar tf "$MAIN_JAR" | grep 'com/alex/projectileweaponapi/api/ProjectileWeaponApi'
+          jar tf "$MAIN_JAR" | grep 'com/alex/classicwandapi/api/ClassicWandApi'
+          jar tf "$MAIN_JAR" | grep 'com/alex/advanceddimensionapi/api/AdvancedDimensionApi'
+          jar tf "$MAIN_JAR" | grep 'com/alex/universalportalapi/api/UniversalPortalApi'
+          jar tf "$MAIN_JAR" | grep 'com/alex/universaltagapi/api/UniversalTagApi'
+          jar tf "$MAIN_JAR" | grep 'Universal_Chest_partially_open.json'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: universal-tool-apis-1.6.0-build
+          path: universal-crowbar-api/build/libs/*.jar

@@ -1,0 +1,42 @@
+name: Publish Bacterium 1.0.0 Artifact
+
+on:
+  push:
+    branches: [ build/bacterium-1.0.0 ]
+    paths:
+      - ".github/workflows/publish-bacterium-1.0.0-artifact.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download known-good Bacterium build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -rf release
+          mkdir -p release
+          gh run download 36604811512 -n bacterium-build -D release
+          echo "Downloaded artifact contents:"
+          find release -maxdepth 3 -type f -print
+          MAIN_JAR="$(find release -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-dev.jar' ! -name '*-api.jar' | head -1)"
+          test -n "$MAIN_JAR"
+          cp "$MAIN_JAR" release/bacterium-1.0.0-game-ready.jar
+          unzip -t release/bacterium-1.0.0-game-ready.jar >/dev/null
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view bacterium-v1.0.0 >/dev/null 2>&1; then
+            gh release upload bacterium-v1.0.0 release/bacterium-1.0.0-game-ready.jar --clobber
+          else
+            gh release create bacterium-v1.0.0 release/bacterium-1.0.0-game-ready.jar \
+              --title "Bacterium 1.0.0" \
+              --notes "Standalone Fabric 1.21.11 Bacterium game-ready JAR from the verified successful build."
+          fi

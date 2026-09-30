@@ -1,0 +1,93 @@
+name: Universal Tool APIs 1.5 Build and Release
+
+on:
+  push:
+    branches: [ universal-tool-apis-v1.5 ]
+    paths:
+      - ".github/workflows/universal-tool-apis-v1.5-build-release.yml"
+      - "uta150_patch.b64"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: universal-crowbar-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore Universal Tool APIs 1.4 source
+        working-directory: .
+        run: |
+          rm -rf /tmp/uta150-base
+          mkdir -p /tmp/uta150-base
+          cp source-parts/source.part-000 /tmp/source-1.4.0.zip
+          unzip -t /tmp/source-1.4.0.zip
+          unzip -q -o /tmp/source-1.4.0.zip -d /tmp/uta150-base
+          if [ -f /tmp/uta150-base/build.gradle ]; then
+            SOURCE_ROOT=/tmp/uta150-base
+          else
+            SOURCE_ROOT="$(find /tmp/uta150-base -mindepth 1 -maxdepth 2 -type f -name build.gradle -printf '%h\n' | head -1)"
+          fi
+          test -n "$SOURCE_ROOT"
+          rm -rf universal-crowbar-api
+          mkdir -p universal-crowbar-api
+          cp -a "$SOURCE_ROOT"/. universal-crowbar-api/
+
+      - name: Apply Fir GUI 1.5 source patch
+        working-directory: .
+        run: |
+          tr -cd 'A-Za-z0-9+/=' < uta150_patch.b64 | base64 -d > /tmp/uta150_patch.tar.gz
+          tar -xzf /tmp/uta150_patch.tar.gz -C universal-crowbar-api
+          if [ -f universal-crowbar-api/src/main/java/com/alex/universalelytraapi/api/ElytraFallContext.java ]; then
+            sed -i 's/        float fallDistance,/        double fallDistance,/' universal-crowbar-api/src/main/java/com/alex/universalelytraapi/api/ElytraFallContext.java || true
+          fi
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.0'
+
+      - name: Build and verify
+        run: gradle clean build --stacktrace
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          ls -la build/libs
+          MAIN_JAR="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-sources.jar' ! -name '*-api.jar' ! -name '*-deobf.jar' | head -1)"
+          DEOBF_JAR="$(find build/libs -maxdepth 1 -type f -name '*-deobf.jar' | head -1)"
+          API_JAR="$(find build/libs -maxdepth 1 -type f -name '*-api.jar' | head -1)"
+          SOURCES_JAR="$(find build/libs -maxdepth 1 -type f -name '*-sources.jar' | head -1)"
+          test -n "$MAIN_JAR" && test -n "$DEOBF_JAR" && test -n "$API_JAR" && test -n "$SOURCES_JAR"
+          cp "$MAIN_JAR" release/universal-tool-apis-1.5.0-game-ready.jar
+          cp "$DEOBF_JAR" release/universal-tool-apis-1.5.0-deobf.jar
+          cp "$API_JAR" release/universal-tool-apis-1.5.0-api.jar
+          cp "$SOURCES_JAR" release/universal-tool-apis-1.5.0-sources.jar
+          for f in release/*.jar; do unzip -t "$f" >/dev/null; done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: universal-tool-apis-1.5.0
+          path: universal-crowbar-api/release/*.jar
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.5.0 >/dev/null 2>&1; then
+            gh release upload v1.5.0 release/*.jar --clobber
+          else
+            gh release create v1.5.0 release/*.jar \
+              --title "Universal Tool APIs 1.5.0" \
+              --notes "Fabric 1.21.11 / Java 21. Fir-GUI-API now automatically styles conventional vanilla and modded container GUIs, uses precompiled cached draw plans and versioned dynamic-value caching, loads Fir GUI definitions from datapack JSON and config JSON, and adds safe block-entity optimization helpers without automatically skipping server machine logic."
+          fi

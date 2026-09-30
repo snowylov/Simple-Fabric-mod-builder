@@ -10,20 +10,58 @@ import java.util.Optional;
 
 public final class UniversalChestApi {
     public static final String API_ID = "universal-chest-api";
-    private static final Map<Identifier, ChestDefinition> DEFINITIONS = new LinkedHashMap<>();
+
+    private static final Map<Identifier, ChestDefinition> STYLE_DEFINITIONS = new LinkedHashMap<>();
+    private static final Map<String, UniversalContainerDefinition> CONTAINER_DEFINITIONS = new LinkedHashMap<>();
 
     private UniversalChestApi() {}
 
+    /**
+     * v1.6 per-instance chest style registration.
+     */
     public static void register(Identifier id, ChestDefinition definition) {
-        DEFINITIONS.put(Objects.requireNonNull(id), Objects.requireNonNull(definition));
+        STYLE_DEFINITIONS.put(Objects.requireNonNull(id), Objects.requireNonNull(definition));
+    }
+
+    /**
+     * Compatibility with the v1.3-v1.5 Universal Chest API data loader.
+     */
+    public static void register(UniversalContainerDefinition definition) {
+        Objects.requireNonNull(definition, "definition");
+        CONTAINER_DEFINITIONS.put(definition.id(), definition);
+    }
+
+    public static UniversalContainerDefinition chest(String id, int slots) {
+        UniversalContainerDefinition definition =
+                new UniversalContainerDefinition(id, ContainerKind.CHEST, slots, 1, true, true);
+        register(definition);
+        return definition;
+    }
+
+    public static UniversalContainerDefinition barrel(String id, int slots) {
+        UniversalContainerDefinition definition =
+                new UniversalContainerDefinition(id, ContainerKind.BARREL, slots, 1, true, true);
+        register(definition);
+        return definition;
+    }
+
+    public static UniversalContainerDefinition crate(String id, int slots) {
+        UniversalContainerDefinition definition =
+                new UniversalContainerDefinition(id, ContainerKind.CRATE, slots, 16, true, true);
+        register(definition);
+        return definition;
     }
 
     public static Optional<ChestDefinition> get(Identifier id) {
-        return Optional.ofNullable(DEFINITIONS.get(id));
+        return Optional.ofNullable(STYLE_DEFINITIONS.get(id));
     }
 
     public static Map<Identifier, ChestDefinition> definitions() {
-        return Collections.unmodifiableMap(DEFINITIONS);
+        return Collections.unmodifiableMap(STYLE_DEFINITIONS);
+    }
+
+    public static Map<String, UniversalContainerDefinition> containerDefinitions() {
+        return Collections.unmodifiableMap(CONTAINER_DEFINITIONS);
     }
 
     public static ChestDefinition singleTexture(Identifier lock, Identifier base) {

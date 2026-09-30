@@ -1,0 +1,19 @@
+{
+  "format": "universal-chest-api:template_manifest_v1",
+  "texture_slots": {
+    "0": "lock_texture",
+    "1": "body_texture",
+    "particle": "lock_texture"
+  },
+  "states": {
+    "closed": "Universal_Chest_closed.json",
+    "partially_open": "Universal_Chest_partially_open.json",
+    "open": "Universal_Chest_open.json"
+  },
+  "viewer_rules": {
+    "closed": "viewer_count == 0",
+    "partially_open": "lid_progress > 0 && lid_progress < 1",
+    "open": "viewer_count > 0 && lid_progress >= 1"
+  },
+  "fir_gui": "fir-gui-api:chest_3_rows"
+}

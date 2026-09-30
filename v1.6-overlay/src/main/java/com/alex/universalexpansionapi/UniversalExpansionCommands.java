@@ -98,7 +98,7 @@ public final class UniversalExpansionCommands {
                     writePortalDefinition(id, dest, size, r, g, b);
                     c.getSource().sendSuccess(() -> Component.literal("Created portal " + id + ". Restart/reload may be required for newly generated assets."), false);
                     return 1;
-                }))))))));
+                })))))))));
         });
     }
 

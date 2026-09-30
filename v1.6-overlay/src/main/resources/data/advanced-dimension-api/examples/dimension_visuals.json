@@ -1,0 +1,17 @@
+{
+  "dimension": "mymod:crystal_world",
+  "sun_texture": "mymod:textures/environment/crystal_sun.png",
+  "moon_texture": "mymod:textures/environment/crystal_moon.png",
+  "skybox_textures": [
+    "mymod:textures/environment/skybox/0.png",
+    "mymod:textures/environment/skybox/1.png",
+    "mymod:textures/environment/skybox/2.png",
+    "mymod:textures/environment/skybox/3.png",
+    "mymod:textures/environment/skybox/4.png",
+    "mymod:textures/environment/skybox/5.png"
+  ],
+  "sky_color": "#704CFF",
+  "fog_color": "#AA99FF",
+  "star_brightness": 1.25,
+  "vanilla_clouds": false
+}

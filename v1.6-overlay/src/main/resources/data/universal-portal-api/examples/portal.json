@@ -1,0 +1,25 @@
+{
+  "id": "mymod:crystal_portal",
+  "destination_dimension": "mymod:crystal_world",
+  "kind": "SQUARE",
+  "shape": {
+    "min_width": 2,
+    "min_height": 2,
+    "max_width": 16,
+    "max_height": 16,
+    "thickness": 1,
+    "orientation": "EITHER"
+  },
+  "texture": {
+    "source": "minecraft:textures/block/nether_portal.png",
+    "grayscale": true,
+    "red": 0.20,
+    "green": 0.85,
+    "blue": 1.00
+  },
+  "portal_sound": null,
+  "required_visited_dimensions": [
+    "minecraft:the_nether"
+  ],
+  "warmup_ticks": 0
+}

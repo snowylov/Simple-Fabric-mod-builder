@@ -1,0 +1,10 @@
+{
+  "id": "mymod:neon_green",
+  "brick_item": "mymod:neon_green_brick",
+  "brick_block": "mymod:neon_green_bricks",
+  "stairs": "mymod:neon_green_brick_stairs",
+  "slab": "mymod:neon_green_brick_slab",
+  "wall": "mymod:neon_green_brick_wall",
+  "pressure_plate": "mymod:neon_green_brick_pressure_plate",
+  "button": "mymod:neon_green_brick_button"
+}

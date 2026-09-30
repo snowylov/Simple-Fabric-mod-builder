@@ -40,3 +40,5 @@ jobs:
               --title "Bacterium 1.0.0" \
               --notes "Standalone Fabric 1.21.11 Bacterium game-ready JAR from the verified successful build."
           fi
+
+# republish standalone game-ready jar

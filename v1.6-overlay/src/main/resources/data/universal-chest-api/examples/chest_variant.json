@@ -1,0 +1,11 @@
+{
+  "id": "mymod:poplar_diamond_chest",
+  "material": "mymod:poplar",
+  "lock": "minecraft:diamond",
+  "rows": 3,
+  "fir_gui": "fir-gui-api:chest_3_rows",
+  "closed_model": "universal-chest-api:template/universal_chest_closed",
+  "partially_open_model": "universal-chest-api:template/universal_chest_partially_open",
+  "open_model": "universal-chest-api:template/universal_chest_open",
+  "animate_when_viewed": true
+}
